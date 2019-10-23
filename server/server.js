@@ -22,10 +22,13 @@ passport.use(new BoxStrategy({
     },
     function(accessToken, refreshToken, profile, done)
     {
-        User.findOrCreate({ boxId: profile.id }, function(err, user)
-        {
-            return done(err, user);
-        })
+        console.log("Successfully authenticated!");
+        console.log("Access Token: " + accessToken);
+        console.log("Refresh Token: " + refreshToken);
+        console.log("profile: ");
+        console.log(profile);
+        console.log("done: ");
+        console.log(done);
     }
 ))
 
