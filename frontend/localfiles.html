@@ -14,8 +14,9 @@
   </head>
   <body>
     
-    <script src="../bridge.js"></script>
     <button onClick="launchOpenLabeling()">Launch OpenLabeling</button>
+    <input id="localFileInput" type="file" multiple>
+    <button onClick="moveFilesToOpenLabeling()">Copy Files Over</button>
     <div id="processInformation">
       <div>Scylla, Version 0.2</div>
       <div>

@@ -25,3 +25,6 @@ yarn-error.log*
 
 # SCSS Stuff
 *.map
+
+# Don't commit locally-backed-up files, though commit the folder itself
+filebackup/*
