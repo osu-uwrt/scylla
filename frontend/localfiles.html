@@ -9,10 +9,13 @@
     <!-- Electron needs this, for whatever reason. 
       See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <script src="../renderer.js"></script>
 
   </head>
   <body>
     
+    <script src="../bridge.js"></script>
+    <button onClick="launchOpenLabeling()">Launch OpenLabeling</button>
     <div id="processInformation">
       <div>Scylla, Version 0.2</div>
       <div>
