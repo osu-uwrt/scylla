@@ -17,7 +17,9 @@
     "url": "https://github.com/aacitelli/Scylla/issues"
   },
   "homepage": "https://github.com/aacitelli/Scylla#readme",
-  "dependencies": {},
+  "dependencies": {
+    "python-shell": "^1.0.8"
+  },
   "devDependencies": {
     "electron": "^7.1.1"
   }

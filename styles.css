@@ -1,0 +1,53 @@
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+}
+
+#processInformation {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+}
+
+#centeredContainer {
+  width: 100%;
+  text-align: center;
+}
+
+#centeredContainer div {
+  padding-top: 10%;
+}
+
+#centeredContainer div img {
+  width: 400px;
+}
+
+#centeredContainer div button {
+  margin: 0 auto;
+  display: block;
+  font-size: 26px;
+  color: white;
+  padding: 15px 0;
+  width: 200px;
+  border: none;
+}
+
+#centeredContainer div #boxButton {
+  background-color: #bd0000;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+#centeredContainer div #boxButton:hover {
+  background-color: #ac0000;
+}
+
+#centeredContainer div #localFilesButton {
+  background-color: #666666;
+}
+
+#centeredContainer div #localFilesButton:hover {
+  background-color: #545454;
+}

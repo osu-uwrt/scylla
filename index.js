@@ -1,17 +1,20 @@
+// Imports 
 const { app, BrowserWindow } = require('electron')
+const { PythonShell } = require("python-shell");
 
-function createWindow () {
-  // Create the browser window.
+//* Useful Links: 
+// Python-Shell Documentation: https://github.com/extrabacon/python-shell
+
+// When everything's loaded and "ready", create and render the window 
+app.on('ready', () => 
+{
+  // Create browser window
   let win = new BrowserWindow({
-    width: 800,
-    height: 600,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true // Allows Node features in the DOM, basically 
     }
   })
 
-  // and load the index.html of the app.
-  win.loadFile('index.html')
-}
-
-app.on('ready', createWindow)
+  win.loadFile('./startupScreen.html')
+  win.maximize();
+});
