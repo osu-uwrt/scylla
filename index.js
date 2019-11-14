@@ -15,6 +15,6 @@ app.on('ready', () =>
     }
   })
 
-  win.loadFile('./startupScreen.html')
+  win.loadFile('./frontend/startup.html')
   win.maximize();
 });
