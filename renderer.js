@@ -1,5 +1,4 @@
 // TODO: Improve debugging completeness and give more useful feedback (easiest to do while building, not afterwards) 
-
 // Called from a HTML Button's onClick 
 function launchOpenLabeling() {
     
@@ -22,14 +21,11 @@ function launchOpenLabeling() {
   });
 }
 
-// ! THIS METHOD ISN'T FINISHED YET
-
 // Files = Absolute file paths to each file 
 // This method copies over all the passed-in files to 
 // OpenLabeling's startup file 
 // To make sure nothing is accidentally deleted, this will 
 // copy the files into a folder called backup/ in the 
-// ! As currently written, this only performs correctly for local files. 
 function moveFilesToOpenLabeling() {
   console.log.bind(console.log);
 
@@ -40,6 +36,7 @@ function moveFilesToOpenLabeling() {
   // Needed for any operations having to do with the local computer's file system 
   const fs = require("fs");
   const path = require("path");
+  const ncp = require("ncp").ncp;
 
   // TODO: Copy all files currently in the input directory into the filebackup directory
   // * "Backing up" all files in the current input directory so they aren't permanently lost. This is here incase the user needs those files. 
@@ -53,15 +50,25 @@ function moveFilesToOpenLabeling() {
     }
     
     // "files" is an array with each file name
+    for (let i = 0; i < files.length; i++) {
+      console.debug("(" + (i + 1) + "/" + files.length + ") Copying file " + files[i] + " over to '/filebackup'.");
+      ncp(path.join(inputDirPath, files[i]), path.join(__dirname + "/filebackup", files[i]), (err) => {
+        if (err) { 
+          return console.error("Unable to copy file from /input to /filebackup: " + err);
+        }
+      })
+    }
     files.forEach((file) => {
 
-      console.debug("Copying file " + file + " over to '/filebackup'.");
-      fs.copyFile(path.join(inputDirPath, file), path.join(__dirname + "/filebackup", file), (err) => {
-        return console.error("Unable to copy file from /input to /filebackup: " + err);
-      })
+      
     })
   });
 
   // TODO: Remove all files currently in the input directory
   // TODO: Copy all files that were selected into the input directory L
+}
+
+// TODO: Implement this (I don't have an exact idea how this works, so you'll need to do some research, but it'll take a bit of time to understand and implement)
+function authenticateIntoBox() {
+
 }
