@@ -26,6 +26,7 @@ function launchOpenLabeling() {
 // OpenLabeling's startup file 
 // To make sure nothing is accidentally deleted, this will 
 // copy the files into a folder called backup/ in the 
+moveFilesToOpenLabeling();
 function moveFilesToOpenLabeling() {
   console.log.bind(console.log);
 
@@ -36,9 +37,9 @@ function moveFilesToOpenLabeling() {
   // Needed for any operations having to do with the local computer's file system 
   const fs = require("fs");
   const path = require("path");
-  const ncp = require("ncp").ncp;
+  const ncp = require("ncp").ncp; // Required for folder copying 
+  const rimraf = require("rimraf"); // Required for recursive folder deletion
 
-  // TODO: Copy all files currently in the input directory into the filebackup directory
   // * "Backing up" all files in the current input directory so they aren't permanently lost. This is here incase the user needs those files. 
   // Reading in the contents of that directory 
   console.debug("Backing up all files currently in '/input' to '/filebackup'.");
@@ -51,20 +52,38 @@ function moveFilesToOpenLabeling() {
     
     // "files" is an array with each file name
     for (let i = 0; i < files.length; i++) {
-      console.debug("(" + (i + 1) + "/" + files.length + ") Copying file " + files[i] + " over to '/filebackup'.");
+
+      // Debug Output 
+      console.debug("(" + (i + 1) + "/" + files.length + ") Copying file/folder " + files[i] + " over to '/filebackup'.");
+
+      // Copy whatever it is over recursively 
       ncp(path.join(inputDirPath, files[i]), path.join(__dirname + "/filebackup", files[i]), (err) => {
         if (err) { 
           return console.error("Unable to copy file from /input to /filebackup: " + err);
         }
       })
     }
-    files.forEach((file) => {
 
-      
-    })
+    // Delete all files in the input directory 
+    for (let i = 0; i < files.length; i++) {
+
+      // Debug Output 
+      console.debug("(" + (i + 1) + "/" + files.length + ") Deleting file/folder " + files[i] + " from '/input'.");
+
+      rimraf(path.join(inputDirPath, files[i]), (err) => {
+        if (err) { return console.error("Unable to delete folder in /input: " + err); }
+      })
+
+      /* If rimraf doesn't end up deleting files and not just filders, use this code to handle individual files: 
+      // Otherwise, use normal fs.unlink because it works for regular files
+      else {
+        fs.unlink(path.join(inputDirPath, files[i]), (err) => {
+          if (err) { return console.error("Unable to delete file in /input: " + err); }
+        })
+      } */
+    }
   });
 
-  // TODO: Remove all files currently in the input directory
   // TODO: Copy all files that were selected into the input directory L
 }
 
