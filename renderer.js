@@ -5,11 +5,11 @@ function launchOpenLabeling() {
     
   const { PythonShell } = require("python-shell");
 
-  // Needs manually set b/c otherwise it tries to run the Python module
-  // out here instead of in OpenLabeling, then can't find cv2 (opencv) 
+  // TODO: Figure out how to get this running from a portable copy of Python that comes running from within the app, rather than using a user-wide Python install. I think you can probably just include a portable Python install inside this folder structure, and the compilation software we are probably using (electron-forge) handles bundling all folders automatically.   
+  // pythonPath needs manually set here; Can't find it if you try and do it automatically 
   let options = {
     mode: 'text',
-    pythonPath: '/usr/bin/python',
+    pythonPath: '/usr/bin/python', // TODO: Figure out how to get this running 
     pythonOptions: ['-u'], // get print results in real-time
     scriptPath: './OpenLabeling/main',
   };
