@@ -1,4 +1,4 @@
-#!/bin/python
+#! /home/ros/Projects/Scylla/Python-3.6.10/bin/python3.6 
 import argparse
 import glob
 import json
