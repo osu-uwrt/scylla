@@ -30,4 +30,7 @@ yarn-error.log*
 filebackup/*
 
 # Prerequisites 
-Python-3.6.10
+Python-3.6.10 
+
+# ML output
+OpenLabeling/main/output 

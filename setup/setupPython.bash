@@ -26,9 +26,4 @@ sudo make
 sudo make install 
 cd ../setup
 
-# Verifying the correct version was installed 
-echo "Current Directory: " && pwd
-echo "This should say 3.6.10: "
-../Python-3.6.10/bin/python3.6 -v 
-
 

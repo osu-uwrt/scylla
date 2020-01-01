@@ -8,7 +8,7 @@ function launchOpenLabeling() {
   // pythonPath needs manually set here; Can't find it if you try and do it automatically 
   let options = {
     mode: 'text',
-    pythonPath: '/usr/bin/python',
+    pythonPath: '/home/ros/Projects/Scylla/Python-3.6.10/bin/python3.6',
     pythonOptions: ['-u'], // get print results in real-time
     scriptPath: './OpenLabeling/main',
   };
@@ -40,7 +40,7 @@ function moveFilesToOpenLabeling() {
   // Reading in the contents of that directory 
   console.debug("Backing up all files currently in '/input' to '/filebackup'.");
   const inputDirPath = path.join(__dirname, "../OpenLabeling/main/input");
-  fs.readdir(inputDirPath, (err, files) => {
+  fs.readdirSync(inputDirPath, (err, files) => {
     
     if (err) { 
       console.error("Unable to read directory: " + err);  
