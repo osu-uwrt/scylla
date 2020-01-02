@@ -5,6 +5,7 @@ Desc   : Wrapper class for the DaSiamRPN tracking method. This class has the
          methods required to interface with the tracking class implemented
          in main.py within the OpenLabeling package.
 """
+#! ../../Python-3.6.10/bin/python3.6
 import torch
 import numpy as np
 import sys
