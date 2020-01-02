@@ -1,0 +1,8 @@
+pip 
+opencv-python
+opencv-contrib-python 
+numpy 
+tqdm 
+lxml 
+torch 
+torchvision

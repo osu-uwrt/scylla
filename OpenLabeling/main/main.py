@@ -1,8 +1,13 @@
 #! ../../Python-3.6.10/bin/python3.6
+
+# Manually adding the folder containing all our local module installations to $PYTHONPATH 
+import os 
+import sys 
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "site_packages"))
+
 import argparse
 import glob
 import json
-import os
 import re
 
 import cv2
@@ -23,7 +28,6 @@ try:
 except cv2.error:
     print('-> Please ignore this error message\n')
 cv2.destroyAllWindows()
-
 
 parser = argparse.ArgumentParser(description='Open-source image labeling tool')
 parser.add_argument('-i', '--input_dir', default='input', type=str, help='Path to input directory')

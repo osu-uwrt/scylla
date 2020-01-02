@@ -33,4 +33,5 @@ filebackup/*
 Python-3.6.10 
 
 # ML output
-OpenLabeling/main/output 
+OpenLabeling/main/output/*
+OpenLabeling/main/site_packages/*
