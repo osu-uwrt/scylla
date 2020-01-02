@@ -902,9 +902,9 @@ def complement_bgr(color):
     return tuple(k - u for u in color)
 
 # change to the directory of this script
+# This is commented out because python-shell does weird things with the current working directory. The current way we do this 
+# is because it's the only way I could get it to work after several hours of troubleshooting. 
 # os.chdir(os.path.dirname(os.path.abspath(__file__)))
-print("Current Working Directory: " + os.getcwd())
-
 if __name__ == '__main__':
     # load all images and videos (with multiple extensions) from a directory using OpenCV
     IMAGE_PATH_LIST = []

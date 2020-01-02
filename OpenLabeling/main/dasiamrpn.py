@@ -12,6 +12,8 @@ import os
 from os.path import realpath, dirname, join, exists
 
 # Change script working directory to the directory the script is located in, b/c god knows why this isn't already the case 
+# I think this change is necessary because python-shell screws up the working directory. I have no idea why; took me a few hours 
+# to figure out the current, working, way, though it's a little hacky for my liking. 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # set device, depending on whether cuda is available
