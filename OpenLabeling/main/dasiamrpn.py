@@ -8,7 +8,12 @@ Desc   : Wrapper class for the DaSiamRPN tracking method. This class has the
 import torch
 import numpy as np
 import sys
+import os 
 from os.path import realpath, dirname, join, exists
+
+# Change script working directory to the directory the script is located in, b/c god knows why this isn't already the case 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 # set device, depending on whether cuda is available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -16,7 +21,7 @@ try:
     from DaSiamRPN.code.run_SiamRPN import SiamRPN_init, SiamRPN_track
 except ImportError:
     # check if the user has downloaded the submodules
-    if not exists(join('DaSiamRPN', 'code', 'net.py')):
+    if not exists(join('DaSiamRPN', 'code', 'net.py')):      
         print('Error: DaSiamRPN files not found. Please run the following command:')
         print('\tgit submodule update --init')
         exit()

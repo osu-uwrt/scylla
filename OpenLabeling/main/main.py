@@ -902,7 +902,8 @@ def complement_bgr(color):
     return tuple(k - u for u in color)
 
 # change to the directory of this script
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+# os.chdir(os.path.dirname(os.path.abspath(__file__)))
+print("Current Working Directory: " + os.getcwd())
 
 if __name__ == '__main__':
     # load all images and videos (with multiple extensions) from a directory using OpenCV

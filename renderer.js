@@ -8,15 +8,13 @@ function launchOpenLabeling() {
   // pythonPath needs manually set here; Can't find it if you try and do it automatically 
   let options = {
     mode: 'text',
-    pythonPath: '/home/ros/Projects/Scylla/Python-3.6.10/bin/python3.6',
+    pythonPath: 'Python-3.6.10/bin/python3.6', // Relative path, doesn't need changed
+    scriptPath: "OpenLabeling/main",
     pythonOptions: ['-u'], // get print results in real-time
-    scriptPath: './OpenLabeling/main',
   };
   
   PythonShell.run('main.py', options, function (err, results) {
     if (err) throw err;
-
-    // results is an array consisting of messages collected during execution
     console.log('results: %j', results);
   });
 }
