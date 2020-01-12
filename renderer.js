@@ -8,7 +8,6 @@ function launchOpenLabeling() {
   // pythonPath needs manually set here; Can't find it if you try and do it automatically 
   let options = {
     mode: 'text',
-    pythonPath: 'Python-3.6.10/bin/python3.6', // Relative path, doesn't need changed
     scriptPath: "OpenLabeling/main",
     pythonOptions: ['-u'], // get print results in real-time
   };
