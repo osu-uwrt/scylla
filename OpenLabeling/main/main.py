@@ -1,4 +1,4 @@
-#! ../../Python-3.6.10/bin/python3.6
+#! /usr/bin/python3
 
 # Manually adding the folder containing all our local module installations to $PYTHONPATH 
 import os 

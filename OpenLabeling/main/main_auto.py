@@ -15,7 +15,7 @@ Note:
 '''
 
 
-#! ../../Python-3.6.10/bin/python3.6
+#! /usr/bin/python3
 import argparse
 import json
 import os

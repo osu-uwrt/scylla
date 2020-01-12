@@ -3,7 +3,7 @@
 # Licensed under The MIT License
 # Written by Qiang Wang (wangqiang2015 at ia.ac.cn)
 # --------------------------------------------------------
-#! ../../../../Python-3.6.10/bin/python3.6
+#! /usr/bin/python3
 
 import vot
 from vot import Rectangle
