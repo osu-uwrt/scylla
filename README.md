@@ -4,6 +4,7 @@ This is the Ohio State Underwater Robotics new bboxing application, currently un
 
 Our planned completion date is likely somewhere late February, but is heavily variable depending on how things go. 
 
+
 ## Installation 
 
 Just clone the repo, then execute `bash setup.bash` in the `setup` directory. You **must** be *in* the `setup` directory when running this command, or else it won't work correctly. This will likely take 5-10 minutes. 
@@ -19,6 +20,24 @@ The script does the following:
 After executing the setup script above, all you need to do is navigate to the base `Scylla` directory and execute `npm run start`, which will start up the Electron app itself. 
 
 ## Other Notes 
+
+### Workflow
+
+#### Files From Box 
+
+1. User authenticates into Box, going through OSU login, Duo if necessary, etc. 
+2. User selects from Box which files they want to bbox 
+3. Those files are downloaded from Box into OpenLabeling's input folder 
+4. OpenLabeling is started up, using those just-downloaded files by default 
+5. When the User finishes bboxing, we get our desired output, which is correctly named and automatically uploaded to the correct folder in Box 
+
+#### Local Files 
+
+1. User selects the files they want to bbox from anywhere on their computer
+2. Files still in the input folder from last time are backed up to somewhere as a precaution 
+3. These files are copied into OpenLabeling's input folder, then OpenLabeling is started up 
+4. The files are processed by the user in OpenLabeling, then output in our desired format 
+5. The output in our desired format (correctly named) is saved to the `output` folder. It's up to the user to do stuff with that, whether that means uploading to Box itself, or just somewhere local. Thi
 
 ### Notes on OpenLabeling
 
