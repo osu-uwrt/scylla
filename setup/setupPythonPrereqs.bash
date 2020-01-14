@@ -1,5 +1,5 @@
-# TODO: Install all these packages bundled with the project and not universally (which I assume the -U does) 
-# See https://stackoverflow.com/questions/2915471/install-a-python-package-into-a-different-directory-using-pip for details 
-
 # Install requirements from a requirements.txt file to a target directory
+# -r tells pip to install from the requirements.txt file 
+# -t (short for target) specifies the directory that everything will be installed to 
+# --no-cache-dir tells pip to always reinstall to this specific directory and don't use global or user copies of the software (useful to ensure bundling works correctly)
 python3 -mpip install  -r requirements.txt -t ../OpenLabeling/main/site_packages --no-cache-dir
