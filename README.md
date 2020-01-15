@@ -15,6 +15,22 @@ The script does the following:
 - Installs OpenLabeling's required Python modules (torch, etc.) and bundles them with the project
 - Installs Electron and the other JS stuff we need 
 
+### If you want to develop on windows 
+ 
+I don't guarantee functionality; The bash scripts, etc. only work on Linux and it's a lot of effort to change stuff for Windows. 
+
+You will need Node (12.x Preferably), npm, and the following Python packages alongside a Python3 install: 
+- pip
+- opencv-python 
+- opencv-contrib-python
+- numpy 
+- tqdm 
+- lxml 
+- torch 
+- torchvision 
+
+There are also a different set of instructions in the OpenLabeling repo, look at that. 
+
 ## Usage 
 
 After executing the setup script above, all you need to do is navigate to the base `Scylla` directory and execute `npm run start`, which will start up the Electron app itself. 
