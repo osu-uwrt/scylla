@@ -6,6 +6,7 @@
     <title>Scylla</title>
     <link rel="stylesheet" href="./startup.css" />
     <link href="https://fonts.googleapis.com/css?family=Lato|ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <script src="../renderer.js"></script>
 
     <!-- Electron needs this, for whatever reason. 
       See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
@@ -18,7 +19,7 @@
       <div>
         <img src="../static/teamlogo.png" />
         <h1>Scylla</h1>
-        <a id="boxButton" href="">Log Into Box</a>
+        <button id="boxButton" href="" onClick="authenticateIntoBox()">Log Into Box</button>
         <a id="localFilesButton" href="./localfiles.html">Use Local Files</a>
       </div>      
     </div>

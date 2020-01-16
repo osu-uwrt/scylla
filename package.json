@@ -18,11 +18,12 @@
   },
   "homepage": "https://github.com/aacitelli/Scylla#readme",
   "dependencies": {
+    "box-node-sdk": "^1.30.0",
     "ncp": "^2.0.0",
     "python-shell": "^1.0.8",
     "rimraf": "^3.0.0"
   },
   "devDependencies": {
-    "electron": "^7.1.1"
+    "electron": "^7.1.8"
   }
 }

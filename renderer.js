@@ -2,8 +2,7 @@
 // Called from a HTML Button's onClick 
 function launchOpenLabeling() {
     
-  const { PythonShell } = require("python-shell");
-
+  const { PythonShell } = require("python-shell");  
   // TODO: Figure out how to get this running from a portable copy of Python that comes running from within the app, rather than using a user-wide Python install. I think you can probably just include a portable Python install inside this folder structure, and the compilation software we are probably using (electron-forge) handles bundling all folders automatically.   
   // pythonPath needs manually set here; Can't find it if you try and do it automatically 
   let options = {
@@ -104,5 +103,16 @@ function moveFilesToOpenLabeling() {
 
 // TODO: Implement this (I don't have an exact idea how this works, so you'll need to do some research, but it'll take a bit of time to understand and implement)
 function authenticateIntoBox() {
+  const BoxSDK = require("box-node-sdk");
+  var sdk = new BoxSDK({
+    clientID: "htdo6u39nl1w1l9dbrsjx7xcn5g6orgq",
+    clientSecret: "2fMpdtdanrLSIh08nGNjodO7gR661Ud4"
+  });
+
+  var authorize_url = sdk.getAuthorizeURL({
+    response_type: "code"
+  });
+  res.redirect(authorize_url)
+  
 
 }
