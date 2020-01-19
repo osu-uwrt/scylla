@@ -1,18 +1,15 @@
+// Used to find files instead of using relative directories... Our packaging system and Python-Shell REALLY like to screw with paths and this 
+// is the only way I can think of to make it consistently work 
+var glob = require("glob");
+
 // TODO: Improve debugging completeness and give more useful feedback (easiest to do while building, not afterwards) 
 // Called from a HTML Button's onClick 
 function launchOpenLabeling() {
     
-  const { PythonShell } = require("python-shell");
+  const { PythonShell } = require("python-shell");  
 
-  // TODO: Figure out how to get this running from a portable copy of Python that comes running from within the app, rather than using a user-wide Python install. I think you can probably just include a portable Python install inside this folder structure, and the compilation software we are probably using (electron-forge) handles bundling all folders automatically.   
-  // pythonPath needs manually set here; Can't find it if you try and do it automatically 
-  let options = {
-    mode: 'text',
-    scriptPath: "OpenLabeling/main",
-    pythonOptions: ['-u'], // get print results in real-time
-  };
-  
-  PythonShell.run('main.py', options, function (err, results) {
+  // glob.sync returns an array with those files, but there's only ever one file with that name, so we index the first element 
+  PythonShell.run(glob.sync("OpenLabeling/main/main.py")[0], null, function (err, results) {
     if (err) throw err;
     console.log('results: %j', results);
   });
@@ -36,7 +33,8 @@ function moveFilesToOpenLabeling() {
   // * Back Up, then delete all files currently in the '/input' directory 
   // Reading in the contents of that directory 
   console.debug("Backing up all files currently in '/input' to '/filebackup'.");
-  const inputDirPath = path.join(__dirname, "../OpenLabeling/main/input");
+
+  const inputDirPath = glob.sync("../OpenLabeling/main/input")[0];
   fs.readdirSync(inputDirPath, (err, files) => {
     
     if (err) { 

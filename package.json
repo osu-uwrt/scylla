@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/aacitelli/Scylla#readme",
   "dependencies": {
+    "glob": "^7.1.6",
     "ncp": "^2.0.0",
     "python-shell": "^1.0.8",
     "rimraf": "^3.0.0"
