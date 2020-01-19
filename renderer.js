@@ -1,3 +1,4 @@
+const electron = require('electron');
 // TODO: Improve debugging completeness and give more useful feedback (easiest to do while building, not afterwards) 
 // Called from a HTML Button's onClick 
 function launchOpenLabeling() {
@@ -103,16 +104,30 @@ function moveFilesToOpenLabeling() {
 
 // TODO: Implement this (I don't have an exact idea how this works, so you'll need to do some research, but it'll take a bit of time to understand and implement)
 function authenticateIntoBox() {
-  const BoxSDK = require("box-node-sdk");
-  var sdk = new BoxSDK({
-    clientID: "htdo6u39nl1w1l9dbrsjx7xcn5g6orgq",
-    clientSecret: "2fMpdtdanrLSIh08nGNjodO7gR661Ud4"
+  // add box package made for node
+  var BoxSDK = require("box-node-sdk")
+
+  // create a broser pop up window for auth
+  const BrowserWindow = electron.remote.BrowserWindow;
+  var authWindow = new BrowserWindow({
+    width: 800, 
+    height: 600, 
+    show: false, 
+    'node-integration': false,
+    'web-security': false
   });
 
+  // generate the box auth url
+  var sdk = new BoxSDK({
+    clientID: "aywbmb0o8m80ixdybgv2qerjuduh7g9r",
+    clientSecret: "FhysbMfni0A2ZBu1DJ4VtexP4TzJkmR9"
+  });
   var authorize_url = sdk.getAuthorizeURL({
     response_type: "code"
   });
-  res.redirect(authorize_url)
-  
+
+// load the box auth url in a pop up window
+authWindow.loadURL(authorize_url);
+authWindow.show();
 
 }
