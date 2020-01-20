@@ -102,7 +102,6 @@ function moveFilesToOpenLabeling() {
   }
 }
 
-// TODO: Implement this (I don't have an exact idea how this works, so you'll need to do some research, but it'll take a bit of time to understand and implement)
 function authenticateIntoBox() {
   // add box package made for node
   var BoxSDK = require("box-node-sdk")
