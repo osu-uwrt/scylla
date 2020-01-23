@@ -1,9 +1,9 @@
+const electron = require('electron');
 // TODO: Improve debugging completeness and give more useful feedback (easiest to do while building, not afterwards) 
 // Called from a HTML Button's onClick 
 function launchOpenLabeling() {
     
-  const { PythonShell } = require("python-shell");
-
+  const { PythonShell } = require("python-shell");  
   // TODO: Figure out how to get this running from a portable copy of Python that comes running from within the app, rather than using a user-wide Python install. I think you can probably just include a portable Python install inside this folder structure, and the compilation software we are probably using (electron-forge) handles bundling all folders automatically.   
   // pythonPath needs manually set here; Can't find it if you try and do it automatically 
   let options = {
@@ -102,7 +102,31 @@ function moveFilesToOpenLabeling() {
   }
 }
 
-// TODO: Implement this (I don't have an exact idea how this works, so you'll need to do some research, but it'll take a bit of time to understand and implement)
 function authenticateIntoBox() {
+  // add box package made for node
+  var BoxSDK = require("box-node-sdk")
+
+  // create a broser pop up window for auth
+  const BrowserWindow = electron.remote.BrowserWindow;
+  var authWindow = new BrowserWindow({
+    width: 800, 
+    height: 600, 
+    show: false, 
+    'node-integration': false,
+    'web-security': false
+  });
+
+  // generate the box auth url
+  var sdk = new BoxSDK({
+    clientID: "aywbmb0o8m80ixdybgv2qerjuduh7g9r",
+    clientSecret: "FhysbMfni0A2ZBu1DJ4VtexP4TzJkmR9"
+  });
+  var authorize_url = sdk.getAuthorizeURL({
+    response_type: "code"
+  });
+
+// load the box auth url in a pop up window
+authWindow.loadURL(authorize_url);
+authWindow.show();
 
 }
