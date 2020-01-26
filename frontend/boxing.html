@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Scylla</title>
+    <link rel="stylesheet" href="./startup.css" />
+    <!-- Electron needs this, for whatever reason. 
+      See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <script src="renderer.js"></script>
+    <script type="text/javascript" src="https://app.box.com/js/static/select.js"></script>
+</head>
+
+<body>
+    <div id="box-select" data-link-type="YOUR_LINK_TYPE" data-multiselect="YOUR_MULTISELECT"
+        data-client-id="YOUR_CLIENT_ID"></div>
+    <div id="processInformation">
+        <button></button>
+        <div>Scylla, Version 0.2</div>
+        <div>
+            Node
+            <script>document.write(process.versions.node)</script>,
+            Chrome
+            <script>document.write(process.versions.chrome)</script>,
+            Electron
+            <script>document.write(process.versions.electron)</script>
+        </div>
+    </div>
+
+</body>
+
+</html>

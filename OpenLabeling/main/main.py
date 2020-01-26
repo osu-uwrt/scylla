@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+# ! /usr/bin/python3
 
 # Manually adding the folder containing all our local module installations to $PYTHONPATH, or else our interpreter doesn't pick them up and OpenLabeling crashes and burns 
 import os 
