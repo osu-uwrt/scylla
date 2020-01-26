@@ -134,7 +134,7 @@ function moveFilesToOpenLabeling() {
 function authenticateIntoBox() {
   // add box package made for node
   var BoxSDK = require("box-node-sdk");
-  var {clientID, clientSecret} = require("./secret");
+  var {clientID, clientSecret} = require("./frontend/secret");
 
   // create a broser pop up window for auth
   const BrowserWindow = electron.remote.BrowserWindow;
@@ -178,5 +178,5 @@ function openBoxFilePicker() {
     console.log("The user clicked cancel or closed the popup");
   });
 
-  boxSelect.launchPopup();
+  window.location.href = boxSelect;
 }
