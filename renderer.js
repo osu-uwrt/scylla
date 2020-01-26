@@ -1,20 +1,18 @@
+const glob = require("glob");
 const electron = require('electron');
 // TODO: Improve debugging completeness and give more useful feedback (easiest to do while building, not afterwards) 
 // Called from a HTML Button's onClick 
 function launchOpenLabeling() {
     
   const { PythonShell } = require("python-shell");  
-  // TODO: Figure out how to get this running from a portable copy of Python that comes running from within the app, rather than using a user-wide Python install. I think you can probably just include a portable Python install inside this folder structure, and the compilation software we are probably using (electron-forge) handles bundling all folders automatically.   
-  // pythonPath needs manually set here; Can't find it if you try and do it automatically 
-  let options = {
-    mode: 'text',
-    scriptPath: "OpenLabeling/main",
-    pythonOptions: ['-u'], // get print results in real-time
-  };
   
-  PythonShell.run('main.py', options, function (err, results) {
-    if (err) throw err;
-    console.log('results: %j', results);
+  console.log("Current Directory: " + __dirname); 
+  console.log("Trying to find the main.py file.");
+  const pathToOpenLabelingMain = glob.sync("**/OpenLabeling/main/main.py");
+  console.log("Resolved Glob Path: " + pathToOpenLabelingMain);
+
+  PythonShell.run(pathToOpenLabelingMain, null, function (err) {
+    if (err) throw err; 
   });
 }
 
@@ -36,7 +34,10 @@ function moveFilesToOpenLabeling() {
   // * Back Up, then delete all files currently in the '/input' directory 
   // Reading in the contents of that directory 
   console.debug("Backing up all files currently in '/input' to '/filebackup'.");
-  const inputDirPath = path.join(__dirname, "../OpenLabeling/main/input");
+
+  console.log("Current Directory: " + __dirname); 
+  console.log("Trying to find the ./OpenLabeling/main/input directory.");
+  const inputDirPath = glob.sync("OpenLabeling/main/input");
   fs.readdirSync(inputDirPath, (err, files) => {
     
     if (err) { 
@@ -92,6 +93,7 @@ function moveFilesToOpenLabeling() {
     console.debug("(" + (i + 1) + "/" + files.length + ") Copying file/folder " + files[i] + " to '/input'.");
     console.log(JSON.stringify(files[i].path));
 
+    console.log("Current Directory: " + __dirname);
     ncp(files[i].path, path.join(__dirname + "/../OpenLabeling/main/input", files[i].name), (err) => {
       if (err) { 
         console.error("Unable to copy file from /input to /filebackup: " + err);
