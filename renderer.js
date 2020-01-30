@@ -105,7 +105,9 @@ function moveFilesToOpenLabeling() {
 function authenticateIntoBox() {
   // add box package made for node
   var BoxSDK = require("box-node-sdk")
+  const { BrowserView, BrowserWindow } = require('electron')
 
+  // var {clientID, clientSecret} = require("./secret");
   // generate the box auth url
   var sdk = new BoxSDK({
     clientID: "aywbmb0o8m80ixdybgv2qerjuduh7g9r",
