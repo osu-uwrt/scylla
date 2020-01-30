@@ -1,19 +1,20 @@
 const glob = require("glob");
 const electron = require('electron');
-// TODO: Improve debugging completeness and give more useful feedback (easiest to do while building, not afterwards) 
-// Called from a HTML Button's onClick 
-function launchOpenLabeling() {
-    
-  const { PythonShell } = require("python-shell");  
-  
-  console.log("Current Directory: " + __dirname); 
-  console.log("Trying to find the main.py file.");
-  const pathToOpenLabelingMain = glob.sync("**/OpenLabeling/main/main.py");
-  console.log("Resolved Glob Path: " + pathToOpenLabelingMain);
+const path = require("path");
+var process = require("process");
+var spawn = require("child_process").spawn;
 
-  PythonShell.run(pathToOpenLabelingMain, null, function (err) {
-    if (err) throw err; 
-  });
+// Called from HTML onClick 
+function launchOpenLabeling() {
+  
+  // Launching process uisng child_process module 
+  var mainPath = path.join("OpenLabeling", "main", "main.py");
+  var olProcess = spawn("/usr/bin/python3", [path.join(__dirname, "..", mainPath)]);
+
+  // Debug streams, essentially
+  olProcess.stdout.on("data", (chunk) => { console.log("stdout: " + chunk); });
+  olProcess.stderr.on("data", (chunk) => { console.log("stderr: " + chunk); });
+  olProcess.on("close", (code) => { console.log("Child process exited with code " + code + "."); });
 }
 
 // Files = Absolute file paths to each file 
@@ -37,7 +38,7 @@ function moveFilesToOpenLabeling() {
 
   console.log("Current Directory: " + __dirname); 
   console.log("Trying to find the ./OpenLabeling/main/input directory.");
-  const inputDirPath = glob.sync("OpenLabeling/main/input");
+  const inputDirPath = glob.sync("OpenLabeling/main/input")[0];
   fs.readdirSync(inputDirPath, (err, files) => {
     
     if (err) { 
