@@ -161,7 +161,7 @@ function authenticateIntoBox() {
       if (authWindow.webContents.getURL().substring(0, 22) === "https://www.google.com") {        
         hasSignedIn = true;
         authWindow.close();
-        window.location.href = './frontend/boxing.html';
+        window.location.href = 'boxing.html';
       } else {
         console.log(authWindow.webContents.getURL())
         timeout();
@@ -169,7 +169,7 @@ function authenticateIntoBox() {
     }, 10);
   };
 
-  timeout();  
+  timeout();
 
   // var request = require("request");
 

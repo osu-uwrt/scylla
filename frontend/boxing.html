@@ -1,21 +1,34 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+
     <meta charset="UTF-8">
     <title>Scylla</title>
-    <link rel="stylesheet" href="./startup.css" />
+    <link rel="stylesheet" href="./localfiles.css" />
+    <link rel="stylesheet" type="text/css" href="./boxing.css">
+
     <!-- Electron needs this, for whatever reason. 
       See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
-    <script src="../renderer.js"></script>
-    <script type="text/javascript" src="https://app.box.com/js/static/select.js"></script>
+    <script src="../renderer.js"></script>    
+
 </head>
 
 <body>
-    <div id="box-select" data-link-type="YOUR_LINK_TYPE" data-multiselect="YOUR_MULTISELECT"
-        data-client-id="YOUR_CLIENT_ID"></div>
+    <button onclick="window.location.href = 'startup.html';">Back</button>
+    <button onClick="launchOpenLabeling()">Launch OpenLabeling</button>
+    <input id="localFileInput" type="file" multiple>
+    <button onClick="moveFilesToOpenLabeling()">Copy Files Over</button>
+    <h1>Cropping an image using HTML5 Canvas</h1>
+    <div class="wrapper">
+        <canvas id='c1'></canvas>
+        <canvas id='c2'></canvas>
+        <p id="output"></p>
+        <p>Move the cropping bars to enclose the desired area of interest (left canvas).<br>Then you may drag to
+            reposition the cropped image (right canvas).</p>
+    </div>
     <div id="processInformation">
-        <button></button>
         <div>Scylla, Version 0.2</div>
         <div>
             Node
@@ -28,5 +41,6 @@
     </div>
 
 </body>
+<script src="boxing.js"></script>
 
 </html>
