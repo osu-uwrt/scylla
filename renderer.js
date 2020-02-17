@@ -8,8 +8,24 @@ var spawn = require("child_process").spawn;
 function launchOpenLabeling() {
   
   // Launching process uisng child_process module 
-  var mainPath = path.join("OpenLabeling", "main", "main.py");
-  var olProcess = spawn("/usr/bin/python3", [path.join(__dirname, "..", mainPath)]);
+  console.log("process.resourcesPath: " + process.resourcesPath);
+  console.log("__dirname: " + __dirname);
+
+  // Change where we look for resources based on if we're developing 
+  // or actually in a distribution package.
+  var baseDir; 
+  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
+    console.log("We are in the development environment!"); 
+    baseDir = path.join(__dirname, "../"); 
+  } else {
+    console.log("We are in the distribution environment!");
+    baseDir = path.join(process.resourcesPath);
+  }
+  console.log("baseDir: " + baseDir);
+
+  var mainPath = path.resolve(path.join(baseDir, "extraResources", "OpenLabeling", "main", "main.py"));
+  console.log("Launching OpenLabeling from path " + mainPath);
+  var olProcess = spawn("/usr/bin/python3", [mainPath]);
 
   // Debug streams, essentially
   olProcess.stdout.on("data", (chunk) => { console.log("stdout: " + chunk); });

@@ -13,7 +13,7 @@
     "url": "git+https://github.com/aacitelli/Scylla.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Anden Acitelli <a.acitelli@gmail.com>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/aacitelli/Scylla/issues"
@@ -31,16 +31,18 @@
     "electron-builder": "^22.3.2"
   }, 
   "build": {
-    "appId": "scylla", 
-    "extraResources": "OpenLabeling/", 
+    "appId": "com.osuuwrt.scylla", 
+    "extraResources": [ 
+      "./extraResources/**"
+    ], 
+    "files": [
+      "**/*", "./icon.png", "./extraResources"
+    ],
     "linux": {
-      "target": "zip"
-    }, 
-    "mac": {
-      "target": "zip"
-    }, 
-    "win": {
-      "target": "zip"
+      "category": "Graphics",
+      "target": [
+        "AppImage"
+      ]
     }
   }
 }
