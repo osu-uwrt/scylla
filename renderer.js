@@ -25,7 +25,10 @@ function launchOpenLabeling() {
 
   var mainPath = path.resolve(path.join(baseDir, "extraResources", "OpenLabeling", "main", "main.py"));
   console.log("Launching OpenLabeling from path " + mainPath);
-  var olProcess = spawn("/usr/bin/python3", [mainPath]);
+  var olProcess = spawn("/usr/bin/python3", [
+    mainPath, 
+    "-u", 
+    baseDir ]);
 
   // Debug streams, essentially
   olProcess.stdout.on("data", (chunk) => { console.log("stdout: " + chunk); });

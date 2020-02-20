@@ -41,7 +41,8 @@
     "linux": {
       "category": "Graphics",
       "target": [
-        "AppImage"
+        "AppImage", 
+        "deb"
       ]
     }
   }

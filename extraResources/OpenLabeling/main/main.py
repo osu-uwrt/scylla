@@ -1,8 +1,22 @@
 #! /usr/bin/python3
 
+# DO ON SUNDAY: I HAVE THE CORRECT PATH BEING PASSED IN; TEST THAT GOING INTO THE 
+# DIRECTORY IN DIST AND SEE IF IT SUCCESSFULLY PASSES THAT PATH IN THERE 
+
 # Manually adding the folder containing all our local module installations to $PYTHONPATH, or else our interpreter doesn't pick them up and OpenLabeling crashes and burns 
 import os 
 import sys
+
+print("Passed-In Arguments: ") 
+for x in range(len(sys.argv)): 
+    print(str(x) + ":" + str(sys.argv[x]))
+
+basePath = sys.argv[2] 
+print("basePath: " + str(basePath))
+
+# Delete last two elements 
+del sys.argv[1] 
+del sys.argv[1]
 
 print("os.path.abspath: " + str(os.path.abspath("./")))
 print("os.getcwd: " + str(os.getcwd()))

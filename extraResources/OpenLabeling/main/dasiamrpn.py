@@ -81,7 +81,7 @@ class dasiamrpn(object):
 
     def update(self, next_image):
         """
-        Update bounding box position and size on next_image. Returns True
+        Update box position and size on next_image. Returns True
         beacuse tracking is terminated based on number of frames predicted
         in OpenLabeling, not based on feedback from tracking algorithm (unlike
         the opencv tracking algorithms).
