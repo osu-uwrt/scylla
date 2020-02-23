@@ -1,12 +1,15 @@
 {
   "name": "scylla",
   "version": "1.0.0",
-  "description": "",
+  "description": "This is scylla!",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist": "electron-builder --win --mac", 
+    "dist-linux": "electron-builder",
+    "dist-win": "electron-builder --win", 
+    "dist-mac": "electron-builder --mac"
   },
   "repository": {
     "type": "git",
@@ -39,9 +42,8 @@
       "**/*", "./icon.png", "./extraResources"
     ],
     "linux": {
-      "category": "Graphics",
+      "category": "Graphics", 
       "target": [
-        "AppImage", 
         "deb"
       ]
     }
