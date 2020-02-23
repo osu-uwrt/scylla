@@ -14,17 +14,18 @@ for x in range(len(sys.argv)):
 basePath = sys.argv[2] 
 print("basePath: " + str(basePath))
 
-# Delete last two elements 
+# Delete last two elements b/c something in OpenLabeling uses these arguments 
+# too and it screws that system up for whatever reason 
 del sys.argv[1] 
 del sys.argv[1]
 
 print("os.path.abspath: " + str(os.path.abspath("./")))
 print("os.getcwd: " + str(os.getcwd()))
 
-sitePackagesAddress = os.path.join(os.path.abspath("./"), "extraResources", "site_packages")
+sitePackagesAddress = os.path.join(basePath, "extraResources", "site_packages")
 
 print("Looking for site_packages at this path: " + str(sitePackagesAddress))
-sys.path.append(os.path.join(os.path.abspath("./"), "extraResources", "site_packages"))
+sys.path.append(os.path.join(basePath, "extraResources", "site_packages"))
 
 import argparse
 import glob
