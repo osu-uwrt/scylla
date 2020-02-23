@@ -12,6 +12,7 @@ var spawn = require("child_process").spawn;
 // Interfacing w/ BuckeyeBox 
 var fetch = require("node-fetch"); 
 var BoxSDK = require("box-node-sdk");
+var fs = require("fs"); 
 
 // Called from HTML onClick 
 // TODO: Lots of debug statements in here, get rid of them in "final" app version 
@@ -166,8 +167,8 @@ function moveFilesToOpenLabeling() {
 */
 
 function authenticateIntoBox() {
-  // add box package made for node
-  
+
+  var debugStream = fs.createWriteStream("debug.txt"); 
 
   // create a broser pop up window for auth
   const BrowserWindow = electron.remote.BrowserWindow;
@@ -180,14 +181,17 @@ function authenticateIntoBox() {
   });
 
   // generate the box auth url
-  var sdk = new BoxSDK({
-    clientID: "aywbmb0o8m80ixdybgv2qerjuduh7g9r",
-    clientSecret: "FhysbMfni0A2ZBu1DJ4VtexP4TzJkmR9"
+  var login = require("../keys.js"); 
+  var sdk = new BoxSDK({ 
+    clientID: login.CLIENT_ID,
+    clientSecret: login.CLIENT_SECRET
   });
+
   var authorize_url = sdk.getAuthorizeURL({
     response_type: "code"
   });
 
+  console.log("authorize_url: " + authorize_url); 
   authWindow.loadURL(authorize_url);
   authWindow.show();
 
@@ -195,6 +199,7 @@ function authenticateIntoBox() {
   var hasSignedIn = false;
   const timeout = () => {
     setTimeout(function() {
+      console.log("Current authWindow URL: " + authWindow.webContents.getURL()); 
       if (authWindow.webContents.getURL().substring(0, 22) === "https://www.google.com") {        
         hasSignedIn = true;
         authWindow.close();

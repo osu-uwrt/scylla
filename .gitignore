@@ -40,3 +40,6 @@ extraResources/OpenLabeling/main/input/*
 extraResources/site_packages
 out
 dist
+
+# Box Authentication stuff that we don't want in commit history 
+keys.js 
