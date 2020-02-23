@@ -6,9 +6,9 @@
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder --win --mac", 
+    "dist": "electron-builder --win --mac",
     "dist-linux": "electron-builder",
-    "dist-win": "electron-builder --win", 
+    "dist-win": "electron-builder --win",
     "dist-mac": "electron-builder --mac"
   },
   "repository": {
@@ -26,23 +26,26 @@
     "box-node-sdk": "^1.30.0",
     "glob": "^7.1.6",
     "ncp": "^2.0.0",
+    "node-fetch": "^2.6.0",
     "python-shell": "^1.0.8",
     "rimraf": "^3.0.0"
   },
   "devDependencies": {
     "electron": "^7.1.8",
     "electron-builder": "^22.3.2"
-  }, 
+  },
   "build": {
-    "appId": "com.osuuwrt.scylla", 
-    "extraResources": [ 
+    "appId": "com.osuuwrt.scylla",
+    "extraResources": [
       "./extraResources/**"
-    ], 
+    ],
     "files": [
-      "**/*", "./icon.png", "./extraResources"
+      "**/*",
+      "./icon.png",
+      "./extraResources"
     ],
     "linux": {
-      "category": "Graphics", 
+      "category": "Graphics",
       "target": [
         "deb"
       ]

@@ -1,10 +1,20 @@
-const glob = require("glob");
-const electron = require('electron');
-const path = require("path");
+// General Dependencies 
+const electron = require('electron'); 
 var process = require("process");
+
+// Finding Files, Moving Files Around
+const glob = require("glob");
+const path = require("path");
+
+// Launching Python app on proxy w/ main app, essentially 
 var spawn = require("child_process").spawn;
 
+// Interfacing w/ BuckeyeBox 
+var fetch = require("node-fetch"); 
+var BoxSDK = require("box-node-sdk");
+
 // Called from HTML onClick 
+// TODO: Lots of debug statements in here, get rid of them in "final" app version 
 function launchOpenLabeling() {
   
   // Launching process uisng child_process module 
@@ -36,6 +46,7 @@ function launchOpenLabeling() {
   olProcess.on("close", (code) => { console.log("Child process exited with code " + code + "."); });
 }
 
+/*
 // Files = Absolute file paths to each file
 // This method copies over all the passed-in files to
 // OpenLabeling's startup file
@@ -117,7 +128,7 @@ function moveFilesToOpenLabeling() {
         fs.unlink(path.join(inputDirPath, files[i]), (err) => {
           if (err) { return console.error("Unable to delete file in /input: " + err); }
         })
-      } */
+      } 
     }
   });
 
@@ -152,10 +163,11 @@ function moveFilesToOpenLabeling() {
     );
   }
 }
+*/
 
 function authenticateIntoBox() {
   // add box package made for node
-  var BoxSDK = require("box-node-sdk");
+  
 
   // create a broser pop up window for auth
   const BrowserWindow = electron.remote.BrowserWindow;
@@ -175,8 +187,11 @@ function authenticateIntoBox() {
   var authorize_url = sdk.getAuthorizeURL({
     response_type: "code"
   });
+
   authWindow.loadURL(authorize_url);
   authWindow.show();
+
+  // Checks every 10ms if the user has logged in yet 
   var hasSignedIn = false;
   const timeout = () => {
     setTimeout(function() {
