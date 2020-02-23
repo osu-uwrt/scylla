@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+    <title>Scylla</title>
+    <link rel="stylesheet" href="./localfiles.css" />
+    <link rel="stylesheet" type="text/css" href="./boxing.css">
+
+    <!-- Electron needs this, for whatever reason. 
+      See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <script src="../renderer.js"></script>
+    <script src="boxing.js"></script>  
+
+</head>
+
+<body onload="boxImage('https://s3-us-west-2.amazonaws.com/s.cdpn.io/222579/beagle400.jpg')">
+
+    <button onclick="window.location.href = 'startup.html';">Back</button>
+    <button onClick="launchOpenLabeling()">Launch OpenLabeling</button>
+    <input id="localFileInput" type="file" multiple>
+    <button onClick="moveFilesToOpenLabeling()">Copy Files Over</button>
+    <h1>Cropping an image using HTML5 Canvas</h1>
+    <div class="wrapper">
+        <canvas id='c1'></canvas>
+        <canvas id='c2'></canvas>
+        <p id="output"></p>
+        <p>Move the cropping bars to enclose the desired area of interest (left canvas).<br>Then you may drag to
+            reposition the cropped image (right canvas).</p>
+    </div>
+    <div id="processInformation">
+        <div>Scylla, Version 0.2</div>
+        <div>
+            Node
+            <script>document.write(process.versions.node)</script>,
+            Chrome
+            <script>document.write(process.versions.chrome)</script>,
+            Electron
+            <script>document.write(process.versions.electron)</script>
+        </div>
+    </div>
+
+</body>
+
+</html>

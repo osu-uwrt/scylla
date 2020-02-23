@@ -1,6 +1,6 @@
 // Imports 
 const { app, BrowserWindow } = require('electron');
-require("./renderer.js");
+require("./renderer");
 
 //* Useful Links: 
 // Python-Shell Documentation: https://github.com/extrabacon/python-shell
@@ -15,6 +15,6 @@ app.on('ready', () =>
     }
   })
 
-  win.loadFile('./frontend/startup.html');
+  win.loadFile('./frontend/startup.html');  
   win.maximize();
 });
