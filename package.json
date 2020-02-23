@@ -1,17 +1,22 @@
 {
-  "name": "Scylla",
+  "name": "scylla",
   "version": "1.0.0",
-  "description": "",
+  "description": "This is scylla!",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win --mac", 
+    "dist-linux": "electron-builder",
+    "dist-win": "electron-builder --win", 
+    "dist-mac": "electron-builder --mac"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/aacitelli/Scylla.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Anden Acitelli <a.acitelli@gmail.com>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/aacitelli/Scylla/issues"
@@ -25,6 +30,22 @@
     "rimraf": "^3.0.0"
   },
   "devDependencies": {
-    "electron": "^7.1.8"
+    "electron": "^7.1.8",
+    "electron-builder": "^22.3.2"
+  }, 
+  "build": {
+    "appId": "com.osuuwrt.scylla", 
+    "extraResources": [ 
+      "./extraResources/**"
+    ], 
+    "files": [
+      "**/*", "./icon.png", "./extraResources"
+    ],
+    "linux": {
+      "category": "Graphics", 
+      "target": [
+        "deb"
+      ]
+    }
   }
 }

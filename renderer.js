@@ -1,20 +1,39 @@
-const electron = require("electron");
-// TODO: Improve debugging completeness and give more useful feedback (easiest to do while building, not afterwards)
-// Called from a HTML Button's onClick
-function launchOpenLabeling() {
-  const { PythonShell } = require("python-shell");
-  // TODO: Figure out how to get this running from a portable copy of Python that comes running from within the app, rather than using a user-wide Python install. I think you can probably just include a portable Python install inside this folder structure, and the compilation software we are probably using (electron-forge) handles bundling all folders automatically.
-  // pythonPath needs manually set here; Can't find it if you try and do it automatically
-  let options = {
-    mode: "text",
-    scriptPath: "OpenLabeling/main",
-    pythonOptions: ["-u"] // get print results in real-time
-  };
+const glob = require("glob");
+const electron = require('electron');
+const path = require("path");
+var process = require("process");
+var spawn = require("child_process").spawn;
 
-  PythonShell.run("main.py", options, function(err, results) {
-    if (err) throw err;
-    console.log("results: %j", results);
-  });
+// Called from HTML onClick 
+function launchOpenLabeling() {
+  
+  // Launching process uisng child_process module 
+  console.log("process.resourcesPath: " + process.resourcesPath);
+  console.log("__dirname: " + __dirname);
+
+  // Change where we look for resources based on if we're developing 
+  // or actually in a distribution package.
+  var baseDir; 
+  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
+    console.log("We are in the development environment!"); 
+    baseDir = path.join(__dirname, "../"); 
+  } else {
+    console.log("We are in the distribution environment!");
+    baseDir = path.join(process.resourcesPath);
+  }
+  console.log("baseDir: " + baseDir);
+
+  var mainPath = path.resolve(path.join(baseDir, "extraResources", "OpenLabeling", "main", "main.py"));
+  console.log("Launching OpenLabeling from path " + mainPath);
+  var olProcess = spawn("/usr/bin/python3", [
+    mainPath, 
+    "-u", 
+    baseDir ]);
+
+  // Debug streams, essentially
+  olProcess.stdout.on("data", (chunk) => { console.log("stdout: " + chunk); });
+  olProcess.stderr.on("data", (chunk) => { console.log("stderr: " + chunk); });
+  olProcess.on("close", (code) => { console.log("Child process exited with code " + code + "."); });
 }
 
 // Files = Absolute file paths to each file
@@ -34,7 +53,10 @@ function moveFilesToOpenLabeling() {
   // * Back Up, then delete all files currently in the '/input' directory
   // Reading in the contents of that directory
   console.debug("Backing up all files currently in '/input' to '/filebackup'.");
-  const inputDirPath = path.join(__dirname, "../OpenLabeling/main/input");
+
+  console.log("Current Directory: " + __dirname); 
+  console.log("Trying to find the ./OpenLabeling/main/input directory.");
+  const inputDirPath = glob.sync("OpenLabeling/main/input")[0];
   fs.readdirSync(inputDirPath, (err, files) => {
     if (err) {
       console.error("Unable to read directory: " + err);
