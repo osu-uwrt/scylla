@@ -48,13 +48,10 @@ body
             display: table;
         }
 
-        > #boxButton
+        > #boxButton 
         {
             background-color: #bd0000;
-            margin-top: 20px;
-            margin-bottom: 10px;
 
-            // The ampersand is just shorthand for the parent
             &:hover 
             {
                 background-color: #ac0000;

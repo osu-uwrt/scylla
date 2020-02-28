@@ -1,5 +1,6 @@
 // General Dependencies 
-const { BrowserWindow}, electron = require('electron'); 
+const electron = require('electron'); 
+const { ipcRenderer, remote } = require("electron");
 var process = require("process");
 
 // Finding Files, Moving Files Around
@@ -14,43 +15,13 @@ var fetch = require("node-fetch");
 var BoxSDK = require("box-node-sdk");
 var fs = require("fs"); 
 
-// Called from HTML onClick 
-// TODO: Lots of debug statements in here, get rid of them in "final" app version 
-function launchOpenLabeling() {
-  
-  // Launching process uisng child_process module 
-  console.log("process.resourcesPath: " + process.resourcesPath);
-  console.log("__dirname: " + __dirname);
-
-  // Change where we look for resources based on if we're developing 
-  // or actually in a distribution package.
-  var baseDir; 
-  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
-    console.log("We are in the development environment!"); 
-    baseDir = path.join(__dirname, "../"); 
-  } else {
-    console.log("We are in the distribution environment!");
-    baseDir = path.join(process.resourcesPath);
-  }
-  console.log("baseDir: " + baseDir);
-
-  var mainPath = path.resolve(path.join(baseDir, "extraResources", "OpenLabeling", "main", "main.py"));
-  console.log("Launching OpenLabeling from path " + mainPath);
-  var olProcess = spawn("/usr/bin/python3", [
-    mainPath, 
-    "-u", 
-    baseDir ]);
-
-  // Debug streams, essentially
-  olProcess.stdout.on("data", (chunk) => { console.log("stdout: " + chunk); });
-  olProcess.stderr.on("data", (chunk) => { console.log("stderr: " + chunk); });
-  olProcess.on("close", (code) => { console.log("Child process exited with code " + code + "."); });
-}
-
 // Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
 // TODO: Set this to false when building for production. To be super performace oriented, we could get rid of all the code paths we don't follow, but that's a negligible performance increase and this makes development way quicker. 
 var usingDevToken = true; 
+login(); // Called when page loads (intent-based thing)
 function login() {
+
+  console.log("login() called.");
 
   // Make an instance of the SDK with our client-specific details 
   // (tells the client which folders we have access to) 
@@ -127,18 +98,23 @@ function login() {
 }
 
 async function loginPostClient(client) {
+  console.log("Client Object: ", client);
 
-  setTimeout(function() {
-    console.log("Client Object: ", client)
-  }, 1000);
-  
+  // Get rid of the backup button that re-triggers authentication 
+  document.getElementById("loginRedo").style.display = "none";
 
-  /* Some example ways to interfacing using the client itself: 
+  // TODO: Actually do stuff with this client! 
+
+  /*
+  // General Dependencies 
+  const electron = require('electron');
+  const PATH_MARKER_FOLDER_ID = "100533349334"; 
+
   client.users.get(client.CURRENT_USER_ID)
   .then(user => console.log("Hello " + user.name + "!"))
   .catch(err => console.log("Error: " + err)); 
 
-  client.folders.get(BOX_INPUT_FOLDER_ID)
+  client.folders.get(PATH_MARKER_FOLDER_ID)
   .then(folder => {
     console.log("Folder Object: ");
     console.log(folder); 

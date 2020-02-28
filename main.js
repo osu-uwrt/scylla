@@ -1,6 +1,10 @@
 // Imports 
-const { app, BrowserWindow } = require('electron');
-require("./renderer");
+const { app, BrowserWindow, ipcMain } = require('electron');
+
+// Used to share the client object between webpages 
+ipcMain.on("setBoxClientObj", (event, boxClientObjValue) => {
+  global.boxClientObj = boxClientObjValue; 
+});
 
 //* Useful Links: 
 // Python-Shell Documentation: https://github.com/extrabacon/python-shell

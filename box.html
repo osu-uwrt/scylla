@@ -4,7 +4,7 @@
 
     <meta charset="UTF-8">
     <title>Scylla</title>
-    <link rel="stylesheet" href="frontend/localfiles.css" />
+    <link rel="stylesheet" href="frontend/box.css" />
 
     <!-- Electron needs this, for whatever reason. 
       See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
@@ -37,7 +37,12 @@
         Chrome <script>document.write(process.versions.chrome)</script>,
         Electron <script>document.write(process.versions.electron)</script>
       </div>
-    </div>   
+    </div> 
+    
+    <button id="loginRedo">If login failed, click me!</div>
+
+    <!-- Needs to exec after any DOM elements that it modifies -->
+    <script src="box.js"></script>
 
   </body>
 </html>

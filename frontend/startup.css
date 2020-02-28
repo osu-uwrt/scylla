@@ -31,7 +31,7 @@ body {
   width: 400px;
 }
 
-#centeredContainer > div > a, #centeredContainer > div > button {
+#centeredContainer > div > a {
   width: 250px;
   padding: 10px 0;
   text-decoration: none;
@@ -43,9 +43,6 @@ body {
 
 #centeredContainer > div > #boxButton {
   background-color: #bd0000;
-  margin-top: 20px;
-  margin-bottom: 10px;
-  border: none;
 }
 
 #centeredContainer > div > #boxButton:hover {
