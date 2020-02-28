@@ -47,12 +47,31 @@ function launchOpenLabeling() {
   olProcess.on("close", (code) => { console.log("Child process exited with code " + code + "."); });
 }
 
-// Actuates whether we're using a dev token or going through the actual box workflow 
-var usingDevToken = true; 
-function authenticateIntoBox() {
-  if (!usingDevToken) {
-    // create a broser pop up window for auth
-    const BrowserWindow = electron.remote.BrowserWindow;
+// Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
+// TODO: Set this to false when building for production. To be super performace oriented, we could get rid of all the code paths we don't follow, but that's a negligible performance increase and this makes development way quicker. 
+var usingDevToken = false; 
+function login() {
+
+  // Make an instance of the SDK with our client-specific details 
+  // (tells the client which folders we have access to) 
+  let login = require("./keys.js"); 
+  var sdk = new BoxSDK({ clientID: login.CLIENT_ID, clientSecret: login.CLIENT_SECRET }); 
+  
+  // If using a dev token, make a basic client b/c you can't refresh a dev token 
+  var client; 
+
+  // If we're using a dev token, we don't have to go through all the rigamarole of getting an auth code 
+  if (usingDevToken) {
+    client = sdk.getBasicClient(authCode);
+    loginPostClient(client); 
+  } 
+  
+  // We have to authenticate the user to get an auth code 
+  // (we can do a persistent client this way that automatically refreshes codes though)
+  else {
+
+    //! Have the user authenticate in via Box's workflow 
+    const BrowserWindow = electron.remote.BrowserWindow; 
     var authWindow = new BrowserWindow({
       width: 800,
       height: 600,
@@ -61,19 +80,11 @@ function authenticateIntoBox() {
       "web-security": false
     });
 
-    // generate the box auth url
-    var login = require("../keys.js"); 
-    var sdk = new BoxSDK({ 
-      clientID: login.CLIENT_ID,
-      clientSecret: login.CLIENT_SECRET
-    });
-
-    var authorize_url = sdk.getAuthorizeURL({
+    // Open the window the user goes through to authenticate in an electron window 
+    var authorize_url = sdk.getAuthorizeURL({ 
       response_type: "code"
-    });
-
-    console.log("authorize_url: " + authorize_url); 
-    authWindow.loadURL(authorize_url);
+    }); 
+    authWindow.loadURL(authorize_url); 
     authWindow.show();
 
     let currentURL = authWindow.webContents.getURL(); 
@@ -81,41 +92,43 @@ function authenticateIntoBox() {
       setTimeout(function() {
         currentURL = authWindow.webContents.getURL();
         console.log("Current URL: " + currentURL); 
+
+        // If we've successfully authenticated and been redirected 
         if (currentURL.startsWith("https://localhost:1337")) { 
           authWindow.close();
-          postLogin(currentURL.substring(currentURL.indexOf("=") + 1)); 
-        } else {
+          let authCode = currentURL.substring(currentURL.indexOf("=") + 1); 
+
+          // Set up the client, then call next function 
+          sdk.getTokensAuthorizationCodeGrant(authCode, null, function(err, tokenInfo) {
+            if (err) {
+              console.log("Error exchanging auth code! err: ", err); 
+            }
+      
+            var TokenStore = require("./TokenStore");
+            var tokenStore = new TokenStore("test"); 
+            client = sdk.getPersistentClient(tokenInfo, tokenStore); 
+            loginPostClient(client);
+          }); 
+
+          // window.location.href = "box.html";
+        } 
+        
+        // Otherwise, the user is still authenticating; Call again in 10ms 
+        else {
           timeout();
         }
       }, 10);
     };
 
-    timeout();
-  } else {
-    const login = require("./keys.js"); 
-    postLogin(login.CLIENT_ID, login.CLIENT_SECRET, login.DEV_TOKEN); 
-  }  
+    // Start off the async recursion chain 
+    timeout();   
+  }
 }
 
-// Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
-let BOX_INPUT_FOLDER_ID = "100533349334"; 
-let BOX_OUTPUT_FOLDER_ID = "";
-async function postLogin(clientID, clientSecret, accessToken) {
+async function loginPostClient(client) {
 
-  // Debug 
-  console.log("Passed-In Client ID: " + clientID); 
-  console.log("Passed-In Client Secret: " + clientSecret); 
-  console.log("Passed-In Access Code: " + accessToken); 
-
-  var sdk = new BoxSDK({ clientID: clientID, clientSecret: clientSecret }); 
-  
-  // TODO: Turn this into persistent client and do refresh tokens 
-  // More info here: https://github.com/box/box-node-sdk#persistent-client
-  var client = BoxSDK.getBasicClient(accessToken); 
-
-  console.log("client Object: "); 
-  console.log(client); 
-
+  console.log("Client Object: ", client); 
+  /* Some example ways to interfacing using the client itself: 
   client.users.get(client.CURRENT_USER_ID)
   .then(user => console.log("Hello " + user.name + "!"))
   .catch(err => console.log("Error: " + err)); 
@@ -124,5 +137,6 @@ async function postLogin(clientID, clientSecret, accessToken) {
   .then(folder => {
     console.log("Folder Object: ");
     console.log(folder); 
-  })
+  });
+  */
 }

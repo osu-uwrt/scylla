@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <meta charset="UTF-8">
+    <title>Scylla</title>
+    <link rel="stylesheet" href="frontend/localfiles.css" />
+
+    <!-- Electron needs this, for whatever reason. 
+      See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <script src="./renderer.js"></script>
+
+  </head>
+  <body> 
+      
+    <div class="folderWrapper">
+        <div class="file">
+            <div class="name">File 1</div>
+            <div class="date">File Date 1</div>
+        </div>
+
+        <div class="file">
+            <div class="name">File 2</div>
+            <div class="date">File Date 2</div>
+        </div>
+
+        <div class="file">
+            <div class="name">File 3</div>
+            <div class="date">File Date 3</div>
+        </div>
+    </div>
+
+    <div id="processInformation">
+      <div>Scylla, Version 0.2</div>
+      <div>
+        Node <script>document.write(process.versions.node)</script>,
+        Chrome <script>document.write(process.versions.chrome)</script>,
+        Electron <script>document.write(process.versions.electron)</script>
+      </div>
+    </div>   
+
+  </body>
+</html>
