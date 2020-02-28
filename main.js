@@ -15,6 +15,6 @@ app.on('ready', () =>
     }
   })
 
-  win.loadFile('./frontend/startup.html');  
+  win.loadFile('./startup.html');  
   win.maximize();
 });

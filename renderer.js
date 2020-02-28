@@ -47,185 +47,82 @@ function launchOpenLabeling() {
   olProcess.on("close", (code) => { console.log("Child process exited with code " + code + "."); });
 }
 
-/*
-// Files = Absolute file paths to each file
-// This method copies over all the passed-in files to
-// OpenLabeling's startup file
-// To make sure nothing is accidentally deleted, this will
-// copy the files into a folder called backup/ in the
-function moveFilesToOpenLabeling() {
-  console.log.bind(console.log);
-
-  // Needed for any operations having to do with the local computer's file system
-  const fs = require("fs");
-  const path = require("path");
-  const ncp = require("ncp").ncp; // Required for folder copying
-  const rimraf = require("rimraf"); // Required for recursive folder deletion
-
-  // * Back Up, then delete all files currently in the '/input' directory
-  // Reading in the contents of that directory
-  console.debug("Backing up all files currently in '/input' to '/filebackup'.");
-
-  console.log("Current Directory: " + __dirname); 
-  console.log("Trying to find the ./OpenLabeling/main/input directory.");
-  const inputDirPath = glob.sync("OpenLabeling/main/input")[0];
-  fs.readdirSync(inputDirPath, (err, files) => {
-    if (err) {
-      console.error("Unable to read directory: " + err);
-      return;
-    }
-
-    // "files" is an array with each file name
-    for (let i = 0; i < files.length; i++) {
-      // Debug Output
-      console.debug(
-        "(" +
-          (i + 1) +
-          "/" +
-          files.length +
-          ") Copying file/folder " +
-          files[i] +
-          " over to '/filebackup'."
-      );
-
-      // Copy whatever it is over recursively
-      ncp(
-        path.join(inputDirPath, files[i]),
-        path.join(__dirname + "/filebackup", files[i]),
-        err => {
-          if (err) {
-            console.error(
-              "Unable to copy file from /input to /filebackup: " + err
-            );
-            return;
-          }
-        }
-      );
-    }
-
-    // Delete all files in the input directory
-    for (let i = 0; i < files.length; i++) {
-      // Debug Output
-      console.debug(
-        "(" +
-          (i + 1) +
-          "/" +
-          files.length +
-          ") Deleting file/folder " +
-          files[i] +
-          " from '/input'."
-      );
-
-      rimraf(path.join(inputDirPath, files[i]), err => {
-        if (err) {
-          console.error("Unable to delete folder in /input: " + err);
-          return;
-        }
-      });
-
-      /* If rimraf doesn't end up deleting files and not just filders, use this code to handle individual files: 
-      // Otherwise, use normal fs.unlink because it works for regular files
-      else {
-        fs.unlink(path.join(inputDirPath, files[i]), (err) => {
-          if (err) { return console.error("Unable to delete file in /input: " + err); }
-        })
-      } 
-    }
-  });
-
-  // * Copy our selected files into OpenLabeling's input directory
-  // Each element in here has a .name and a .path (absolute) property that
-  // we can use to move it via the fs module
-  files = document.getElementById("localFileInput").files;
-  for (let i = 0; i < files.length; i++) {
-    // Debug Output
-    console.debug(
-      "(" +
-        (i + 1) +
-        "/" +
-        files.length +
-        ") Copying file/folder " +
-        files[i] +
-        " to '/input'."
-    );
-    console.log(JSON.stringify(files[i].path));
-
-    ncp(
-      files[i].path,
-      path.join(__dirname + "/../OpenLabeling/main/input", files[i].name),
-      err => {
-        if (err) {
-          console.error(
-            "Unable to copy file from /input to /filebackup: " + err
-          );
-          return;
-        }
-      }
-    );
-  }
-}
-*/
-
+// Actuates whether we're using a dev token or going through the actual box workflow 
+var usingDevToken = true; 
 function authenticateIntoBox() {
+  if (!usingDevToken) {
+    // create a broser pop up window for auth
+    const BrowserWindow = electron.remote.BrowserWindow;
+    var authWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      show: false,
+      "node-integration": false,
+      "web-security": false
+    });
 
-  var debugStream = fs.createWriteStream("debug.txt"); 
+    // generate the box auth url
+    var login = require("../keys.js"); 
+    var sdk = new BoxSDK({ 
+      clientID: login.CLIENT_ID,
+      clientSecret: login.CLIENT_SECRET
+    });
 
-  // create a broser pop up window for auth
-  const BrowserWindow = electron.remote.BrowserWindow;
-  var authWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    show: false,
-    "node-integration": false,
-    "web-security": false
-  });
+    var authorize_url = sdk.getAuthorizeURL({
+      response_type: "code"
+    });
 
-  // generate the box auth url
-  var login = require("../keys.js"); 
-  var sdk = new BoxSDK({ 
-    clientID: login.CLIENT_ID,
-    clientSecret: login.CLIENT_SECRET
-  });
+    console.log("authorize_url: " + authorize_url); 
+    authWindow.loadURL(authorize_url);
+    authWindow.show();
 
-  var authorize_url = sdk.getAuthorizeURL({
-    response_type: "code"
-  });
+    let currentURL = authWindow.webContents.getURL(); 
+    const timeout = () => {
+      setTimeout(function() {
+        currentURL = authWindow.webContents.getURL();
+        console.log("Current URL: " + currentURL); 
+        if (currentURL.startsWith("https://localhost:1337")) { 
+          authWindow.close();
+          postLogin(currentURL.substring(currentURL.indexOf("=") + 1)); 
+        } else {
+          timeout();
+        }
+      }, 10);
+    };
 
-  console.log("authorize_url: " + authorize_url); 
-  authWindow.loadURL(authorize_url);
-  authWindow.show();
+    timeout();
+  } else {
+    const login = require("./keys.js"); 
+    postLogin(login.CLIENT_ID, login.CLIENT_SECRET, login.DEV_TOKEN); 
+  }  
+}
 
-  // Checks every 10ms if the user has logged in yet 
-  var hasSignedIn = false;
-  const timeout = () => {
-    setTimeout(function() {
-      console.log("Current authWindow URL: " + authWindow.webContents.getURL()); 
-      if (authWindow.webContents.getURL().substring(0, 22) === "https://www.google.com") {        
-        hasSignedIn = true;
-        authWindow.close();
-        window.location.href = 'boxing.html';
-      } else {
-        console.log(authWindow.webContents.getURL())
-        timeout();
-      }
-    }, 10);
-  };
+// Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
+let BOX_INPUT_FOLDER_ID = "100533349334"; 
+let BOX_OUTPUT_FOLDER_ID = "";
+async function postLogin(clientID, clientSecret, accessToken) {
 
-  timeout();
+  // Debug 
+  console.log("Passed-In Client ID: " + clientID); 
+  console.log("Passed-In Client Secret: " + clientSecret); 
+  console.log("Passed-In Access Code: " + accessToken); 
 
-  // var request = require("request");
+  var sdk = new BoxSDK({ clientID: clientID, clientSecret: clientSecret }); 
+  
+  // TODO: Turn this into persistent client and do refresh tokens 
+  // More info here: https://github.com/box/box-node-sdk#persistent-client
+  var client = BoxSDK.getBasicClient(accessToken); 
 
-  // var options = {
-  //   method: "GET",
-  //   url: "https://osu.app.box.com/folder/88879798045"
-  // };
+  console.log("client Object: "); 
+  console.log(client); 
 
-  // request(options, function(error, response, body) {
-  //   if (error) throw new Error(error);
+  client.users.get(client.CURRENT_USER_ID)
+  .then(user => console.log("Hello " + user.name + "!"))
+  .catch(err => console.log("Error: " + err)); 
 
-  //   console.log(body);
-  //   // load the box auth url in a pop up window
-  //   authWindow.loadURL("https://osu.app.box.com/folder/88879798045");
-  //   authWindow.show();
-  // });
+  client.folders.get(BOX_INPUT_FOLDER_ID)
+  .then(folder => {
+    console.log("Folder Object: ");
+    console.log(folder); 
+  })
 }
