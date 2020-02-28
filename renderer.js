@@ -1,5 +1,5 @@
 // General Dependencies 
-const electron = require('electron'); 
+const { BrowserWindow}, electron = require('electron'); 
 var process = require("process");
 
 // Finding Files, Moving Files Around
@@ -49,7 +49,7 @@ function launchOpenLabeling() {
 
 // Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
 // TODO: Set this to false when building for production. To be super performace oriented, we could get rid of all the code paths we don't follow, but that's a negligible performance increase and this makes development way quicker. 
-var usingDevToken = false; 
+var usingDevToken = true; 
 function login() {
 
   // Make an instance of the SDK with our client-specific details 
@@ -62,7 +62,8 @@ function login() {
 
   // If we're using a dev token, we don't have to go through all the rigamarole of getting an auth code 
   if (usingDevToken) {
-    client = sdk.getBasicClient(authCode);
+    let login = require("./keys.js"); 
+    client = sdk.getBasicClient(login.DEV_TOKEN);
     loginPostClient(client); 
   } 
   
@@ -127,7 +128,11 @@ function login() {
 
 async function loginPostClient(client) {
 
-  console.log("Client Object: ", client); 
+  setTimeout(function() {
+    console.log("Client Object: ", client)
+  }, 1000);
+  
+
   /* Some example ways to interfacing using the client itself: 
   client.users.get(client.CURRENT_USER_ID)
   .then(user => console.log("Hello " + user.name + "!"))
