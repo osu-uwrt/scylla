@@ -24,6 +24,7 @@
   "homepage": "https://github.com/aacitelli/Scylla#readme",
   "dependencies": {
     "box-node-sdk": "^1.30.0",
+    "box-ui-elements": "^11.0.2",
     "glob": "^7.1.6",
     "ncp": "^2.0.0",
     "node-fetch": "^2.6.0",

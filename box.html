@@ -7,37 +7,22 @@
     <link rel="stylesheet" href="frontend/box.css" />
 
     <!-- Electron needs this, for whatever reason. 
-      See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+      See: https://electronjs.org/docs/tutorial/security#csp-meta-tag - ->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" /> -->
 
   </head>
   <body> 
 
-    <div class="folderWrapper">
-        <div class="file">
-            <div class="name">File 1</div>
-            <div class="date">File Date 1</div>
-        </div>
+    <!-- TODO: Make this use Box's UI Elements instead of a quick mockup that I did. 
+      see https://developer.box.com/guides/embed/ui-elements/explorer/ -->
 
-        <div class="file">
-            <div class="name">File 2</div>
-            <div class="date">File Date 2</div>
-        </div>
-
-        <div class="file">
-            <div class="name">File 3</div>
-            <div class="date">File Date 3</div>
-        </div>
+    <div id="box_folder">
+      <div class="box_item">Item 1</div>
+      <div class="box_item">Item 2</div>
+      <div class="box_item">Item 3</div>
+      <div class="box_item">Item 4</div>
+      <div class="box_item">Item 5</div>
     </div>
-
-    <div id="processInformation">
-      <div>Scylla, Version 0.2</div>
-      <div>
-        Node <script>document.write(process.versions.node)</script>,
-        Chrome <script>document.write(process.versions.chrome)</script>,
-        Electron <script>document.write(process.versions.electron)</script>
-      </div>
-    </div> 
     
     <button id="loginRedo">If login failed, click me!</div>
 

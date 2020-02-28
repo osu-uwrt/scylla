@@ -97,27 +97,38 @@ function login() {
   }
 }
 
+
 async function loginPostClient(client) {
+
+  const PATH_MARKER_FOLDER_ID = "100533349334"; 
   console.log("Client Object: ", client);
 
-  // Get rid of the backup button that re-triggers authentication 
+  // Get rid of the backup button that re-triggers authentication, seeing as we've authenticated correctly  
   document.getElementById("loginRedo").style.display = "none";
-
-  // TODO: Actually do stuff with this client! 
-
-  /*
-  // General Dependencies 
-  const electron = require('electron');
-  const PATH_MARKER_FOLDER_ID = "100533349334"; 
-
-  client.users.get(client.CURRENT_USER_ID)
-  .then(user => console.log("Hello " + user.name + "!"))
-  .catch(err => console.log("Error: " + err)); 
+  
+  let root = document.getElementById("box_folder");
 
   client.folders.get(PATH_MARKER_FOLDER_ID)
   .then(folder => {
+    removeChildrenOfElement(root);
     console.log("Folder Object: ");
     console.log(folder); 
-  });
-  */
+
+    document.getElementById("box_folder").remove
+    for (let i = 0; i < folder.item_collection.entries.length; i++) {
+      let item = document.createElement("div"); 
+      let text = folder.item_collection.entries[i].name; 
+      item.appendChild(document.createTextNode(text)); 
+      item.classList.toggle("box_item");
+      root.appendChild(item);
+    }
+  });  
+}
+
+async function removeChildrenOfElement(element) {
+  var child = element.lastElementChild; 
+  while (child) {
+    element.removeChild(child); 
+    child = element.lastElementChild;
+  }
 }
