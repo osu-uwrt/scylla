@@ -1,19 +1,5 @@
-// General Dependencies 
 const electron = require('electron'); 
-const { ipcRenderer, remote } = require("electron");
-var process = require("process");
-
-// Finding Files, Moving Files Around
-const glob = require("glob");
-const path = require("path");
-
-// Launching Python app on proxy w/ main app, essentially 
-var spawn = require("child_process").spawn;
-
-// Interfacing w/ BuckeyeBox 
-var fetch = require("node-fetch"); 
-var BoxSDK = require("box-node-sdk");
-var fs = require("fs"); 
+var BoxSDK = require("box-node-sdk"); // Interface w/ Box API
 
 // Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
 // TODO: Set this to false when building for production. To be super performace oriented, we could get rid of all the code paths we don't follow, but that's a negligible performance increase and this makes development way quicker. 
