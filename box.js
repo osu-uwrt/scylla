@@ -83,10 +83,8 @@ function login() {
   }
 }
 
-
+const BOX_RAW_FOLDER_ID = "88879798045"; 
 async function loginPostClient(client) {
-
-  const PATH_MARKER_FOLDER_ID = "100533349334"; 
   console.log("Client Object: ", client);
 
   // Get rid of the backup button that re-triggers authentication, seeing as we've authenticated correctly  
@@ -94,13 +92,11 @@ async function loginPostClient(client) {
   
   let root = document.getElementById("box_folder");
 
-  client.folders.get(PATH_MARKER_FOLDER_ID)
+  client.folders.get(BOX_RAW_FOLDER_IO)
   .then(folder => {
     removeChildrenOfElement(root);
-    console.log("Folder Object: ");
-    console.log(folder); 
+    console.log("Folder Object: ", folder);
 
-    document.getElementById("box_folder").remove
     for (let i = 0; i < folder.item_collection.entries.length; i++) {
       let item = document.createElement("div"); 
       let text = folder.item_collection.entries[i].name; 
