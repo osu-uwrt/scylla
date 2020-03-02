@@ -1,5 +1,45 @@
+// General Dependencies 
 const electron = require('electron'); 
+
+// Interfacing w/ Box API 
 var BoxSDK = require("box-node-sdk"); // Interface w/ Box API
+
+// OpenLabeling 
+var process = require("process");
+const path = require("path");
+var spawn = require("child_process").spawn;
+var fs = require("fs"); 
+
+function launchOpenLabeling() {
+  
+  // Launching process uisng child_process module 
+  console.log("process.resourcesPath: " + process.resourcesPath);
+  console.log("__dirname: " + __dirname);
+
+  // Change where we look for resources based on if we're developing 
+  // or actually in a distribution package.
+  var baseDir; 
+  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
+    console.log("We are in the development environment!"); 
+    baseDir = path.join(__dirname); 
+  } else {
+    console.log("We are in the distribution environment!");
+    baseDir = path.join(process.resourcesPath);
+  }
+  console.log("baseDir: " + baseDir);
+
+  var mainPath = path.resolve(path.join(baseDir, "extraResources", "OpenLabeling", "main", "main.py"));
+  console.log("Launching OpenLabeling from path " + mainPath);
+  var olProcess = spawn("/usr/bin/python3", [
+    mainPath, 
+    "-u", 
+    baseDir ]);
+
+  // Debug streams, essentially
+  olProcess.stdout.on("data", (chunk) => { console.log("stdout: " + chunk); });
+  olProcess.stderr.on("data", (chunk) => { console.log("stderr: " + chunk); });
+  olProcess.on("close", (code) => { console.log("Child process exited with code " + code + "."); });
+}
 
 // Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
 // TODO: Set this to false when building for production. To be super performace oriented, we could get rid of all the code paths we don't follow, but that's a negligible performance increase and this makes development way quicker. 
@@ -67,8 +107,6 @@ function login() {
             client = sdk.getPersistentClient(tokenInfo, tokenStore); 
             loginPostClient(client);
           }); 
-
-          // window.location.href = "box.html";
         } 
         
         // Otherwise, the user is still authenticating; Call again in 10ms 
@@ -83,28 +121,26 @@ function login() {
   }
 }
 
-const BOX_RAW_FOLDER_ID = "88879798045"; 
+
 async function loginPostClient(client) {
-  console.log("Client Object: ", client);
-
-  // Get rid of the backup button that re-triggers authentication, seeing as we've authenticated correctly  
-  document.getElementById("loginRedo").style.display = "none";
+  const BOX_RAW_FOLDER_ID = "88879798045"; 
+  const LOCAL_INPUT_FOLDER_PATH = path.join("extraResources", "OpenLabeling", "main", "input"); 
   
+  document.getElementById("loginRedo").style.display = "none"; // Get rid of backup re-authenticate button 
+  
+  // clearInputDirectory();
   let root = document.getElementById("box_folder");
-
-  client.folders.get(BOX_RAW_FOLDER_IO)
-  .then(folder => {
-    removeChildrenOfElement(root);
-    console.log("Folder Object: ", folder);
-
-    for (let i = 0; i < folder.item_collection.entries.length; i++) {
-      let item = document.createElement("div"); 
-      let text = folder.item_collection.entries[i].name; 
-      item.appendChild(document.createTextNode(text)); 
-      item.classList.toggle("box_item");
-      root.appendChild(item);
-    }
-  });  
+  client.folders.getItems(BOX_RAW_FOLDER_ID)
+  .then(items => {
+    console.log("Items: ", items);
+    items.entries.forEach(item => {
+      console.log("Downloading file " + item.name); 
+      client.files.getReadStream(item.id, null, function(err, stream) {
+        if (err) console.error("File Download Error", err);  
+        stream.pipe(fs.createWriteStream(path.join(LOCAL_INPUT_FOLDER_PATH, item.name))); 
+      }); 
+    }); 
+  }); 
 }
 
 async function removeChildrenOfElement(element) {
@@ -113,4 +149,10 @@ async function removeChildrenOfElement(element) {
     element.removeChild(child); 
     child = element.lastElementChild;
   }
+}
+
+var rimraf = require("rimraf"); 
+function clearInputDirectory() {
+  // TODO: Figure out how the hell rimraf's input works, I can't do it for the life of me 
+  rimraf.sync(path.join("extraResources", "OpenLabeling", "main", "input", "*")); 
 }
