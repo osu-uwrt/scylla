@@ -61,6 +61,8 @@ The version of OpenLabeling on this repo is basically the same as if you would h
 
 ### To-Do 
 
+This section is out of date. I will update this section at some point during break with a really nice list of things we have to do. 
+
 - Implement our protocol for how we want to deal with our files from Box 
     - This is more with respect to where the Box files will go and how we'll feed them into OpenLabeling
 - Implement actual Box authentication (you have to log in when you start up the application)
@@ -76,3 +78,30 @@ That's all that I can think of at the moment, but I'm pretty sure there's more t
 ### Gitbook Migration
 
 I've written this README so that it can hopefully just be copy-pasted over to save some work for our incredibly hard-working documentation team. 
+
+## Misc. Workflow
+
+  User opens the app. They are authenticated into Box, then presented with a content tree that starts with the "Raw" directory as its root. They can traverse the tree however they want and select whatever files we want. Most of the traversal's JavaScript is already done for us with Box's UI Elements, but we need to figure out how to actually incorporate those. 
+
+  They can then select a video. When that happens, we download the video, then open OpenLabeling to that video. When the user is done boxing, they hit the "X" button on OpenLabeling. Because we only process one video at a time, we don't have to worry about processing multiple videos at once. We go into that video's folder in the "OL_Output" folder (create if there isn't one) and upload a zip file with each frame's data. Video size is pretty negligible, in terms of download size, but we can try and optimize that a bit or do something like downloading all the videos in whatever directory they're currently in so there's a little less wait.  
+  
+  The ZIP file should be of the format "[START_FRAME.END_FRAME] Video_Name". Video_Name is essentially what OpenLabeling outputs already; We need to figure out from the files generated which frames they got through. We can make the assumption that they bboxed a contiguous section, so just go from the lowest number to the highest number. 
+  
+  We are saving start/end frames so we can eventually search for just videos that haven't been bboxed yet, though that's not something I plan to build in until we have a minimally viable project (which I'm heavily gunning for by the end of break).
+
+  Before MVP, we need a really nice README that covers what you need to run it. Essentially everything is bundled but the Python install, but that needs to be kind of specific in its setup and I'll want to do some experimentation. 
+
+  ## Post-MVP (Minimally Viable Product) Goals / Timeline 
+
+  Other Goals Post-MVP (in approximate order of importance / order): 
+  - Make the front-end look nicer and give nice things like percentage reports on downloads, etc.
+    - We want to optimize the sh*t out of this and make it really intuitive. This should be very good and usable for a *while*.
+  - Highlight (or make them distinctive somehow) videos that have sections that haven't been bboxed yet
+    - This is probaby one of the first things we will do after MVP because this is an important feature. 
+  - Bundle the Python installation with the app 
+    - This is honestly kind of important and is likely one of the first things I will do post-MVP. 
+  - Make it work on Windows/Mac. This is honestly kind of complicated, and most people have access to a Linux install. 
+  - Make changes to OpenLabeling itself rather than just the wrapper. This will be after we do a little bit of repetition testing (we need someone to just use it for a really long time and figure out what the bottlenecks are). 
+    - Sidenote: We want to keep our own distinct copy of OpenLabeling because we want to make a lot of changes to OpenLabeling itself down the line and if we're tied too much to the original structure we can't go too far away. We don't have as much latitude. 
+
+  Past a lot of the above, it's just making small changes based on feedback. 
