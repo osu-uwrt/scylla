@@ -128,7 +128,7 @@ async function loginPostClient(client) {
   
   document.getElementById("loginRedo").style.display = "none"; // Get rid of backup re-authenticate button 
   
-  // clearInputDirectory();
+  clearInputDirectory();
   let root = document.getElementById("box_folder");
   client.folders.getItems(BOX_RAW_FOLDER_ID)
   .then(items => {
@@ -137,7 +137,11 @@ async function loginPostClient(client) {
       console.log("Downloading file " + item.name); 
       client.files.getReadStream(item.id, null, function(err, stream) {
         if (err) console.error("File Download Error", err);  
-        stream.pipe(fs.createWriteStream(path.join(LOCAL_INPUT_FOLDER_PATH, item.name))); 
+        let writeStream = fs.createWriteStream(path.join(LOCAL_INPUT_FOLDER_PATH, item.name));
+        stream.pipe(writeStream); 
+        writeStream.on("close", function() {
+          console.log("Finished downloading file " + item.name);
+        });
       }); 
     }); 
   }); 
@@ -151,8 +155,8 @@ async function removeChildrenOfElement(element) {
   }
 }
 
-var rimraf = require("rimraf"); 
 function clearInputDirectory() {
-  // TODO: Figure out how the hell rimraf's input works, I can't do it for the life of me 
+  console.debug("Deleting everything in the /input folder before we download anything.");
+  var rimraf = require("rimraf"); 
   rimraf.sync(path.join("extraResources", "OpenLabeling", "main", "input", "*")); 
 }
