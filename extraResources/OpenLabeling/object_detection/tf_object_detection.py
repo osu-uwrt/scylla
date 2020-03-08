@@ -1,8 +1,5 @@
 import numpy as np
-import tensorflow as tf
-
-
-
+import tensorflow as tensorflow
 
 class ObjectDetector(object):
     def __init__(self, graph_path, score_threshold, objIds):

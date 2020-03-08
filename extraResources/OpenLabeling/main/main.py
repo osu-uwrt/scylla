@@ -1,7 +1,4 @@
-# ! /usr/bin/python3
-
-# DO ON SUNDAY: I HAVE THE CORRECT PATH BEING PASSED IN; TEST THAT GOING INTO THE 
-# DIRECTORY IN DIST AND SEE IF IT SUCCESSFULLY PASSES THAT PATH IN THERE 
+#! ../../Python3.6.10/python
 
 # Manually adding the folder containing all our local module installations to $PYTHONPATH, or else our interpreter doesn't pick them up and OpenLabeling crashes and burns 
 import os 
