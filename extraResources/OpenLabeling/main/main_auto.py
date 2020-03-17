@@ -14,7 +14,6 @@ Note:
     a way to integerate with `class_list.txt`
 '''
 
-#! ../../Python3.6.10/python
 import argparse
 import json
 import os

@@ -1,1 +1,0 @@
-/home/kal/Downloads/Python-3.6.10/Modules/_ctypes/libffi/include/ffi_common.h

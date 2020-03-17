@@ -22,7 +22,7 @@ print("os.getcwd: " + str(os.getcwd()))
 sitePackagesAddress = os.path.join(basePath, "extraResources", "site_packages")
 
 print("Looking for site_packages at this path: " + str(sitePackagesAddress))
-sys.path.append(os.path.join(basePath, "extraResources", "site_packages"))
+sys.path.append(sitePackagesAddress)
 
 import argparse
 import glob

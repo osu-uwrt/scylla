@@ -9,6 +9,7 @@ var process = require("process");
 const path = require("path");
 var spawn = require("child_process").spawn;
 var fs = require("fs");
+const PythonPath = "/usr/bin/python3"; 
 
 function launchOpenLabeling(client) {
 
@@ -28,12 +29,10 @@ function launchOpenLabeling(client) {
   }
   console.log("baseDir: " + baseDir);
 
-  var mainPath = path.resolve(path.join(baseDir, "extraResources", "OpenLabeling", "main", "main.py"));
-  console.log("Launching OpenLabeling from path " + mainPath);
-  var olProcess = spawn("/usr/bin/python3", [
-    mainPath,
-    "-u",
-    baseDir]);
+  var OLMainFilePath = path.resolve(path.join(baseDir, "extraResources", "OpenLabeling", "main", "main.py"));
+  console.log("Launching OpenLabeling from path " + OLMainFilePath);
+  console.log("Using python interpreter located at " + PythonPath);
+  var olProcess = spawn(PythonPath, [ OLMainFilePath, "-u", baseDir ] );
 
   // Debug streams, essentially
   olProcess.stdout.on("data", (chunk) => { console.log("stdout: " + chunk); });
