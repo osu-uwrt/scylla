@@ -217,7 +217,7 @@ function uploadOutput(client, videoNames) {
 
     // Make them all absolute (well, relative to base directory) paths
     for (let j = 0; j < dirContents.length; j++) {
-      dirContents[j] = path.join(OL_INPUT_FOLDER, dirContents[j]); 
+      dirContents[j] = path.join(OL_INPUT_FOLDER, videoNames[i], dirContents[j]); 
     }
 
     filesToUpload = filesToUpload.concat(dirContents);
@@ -231,7 +231,7 @@ function uploadOutput(client, videoNames) {
 
     // Make them all absolute (well, relative to base directory) paths
     for (let j = 0; j < dirContents.length; j++) {
-      dirContents[j] = path.join(OL_YOLO_OUTPUT_FOLDER, dirContents[j]); 
+      dirContents[j] = path.join(OL_YOLO_OUTPUT_FOLDER, videoNames[i], dirContents[j]); 
     }
 
     filesToUpload = filesToUpload.concat(dirContents);
