@@ -1,46 +1,51 @@
+// TODO: Redo the styling to be dark mode (cause light mode sucks) 
 // General Dependencies 
 const electron = require('electron');
 
 // Interfacing w/ Box API 
 var BoxSDK = require("box-node-sdk"); // Interface w/ Box API
+var archiver = require("archiver");
 
 // OpenLabeling 
 var process = require("process");
 const path = require("path");
 var spawn = require("child_process").spawn;
 var fs = require("fs");
-const PythonPath = "/usr/bin/python3"; 
 
-function launchOpenLabeling(client) {
+// Does exactly what you think it does 
+function launchOpenLabeling(client, videoNames) {
 
-  // Launching process uisng child_process module 
-  console.log("process.resourcesPath: " + process.resourcesPath);
-  console.log("__dirname: " + __dirname);
-
-  // Change where we look for resources based on if we're developing 
-  // or actually in a distribution package.
-  var baseDir;
-  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
-    console.log("We are in the development environment!");
-    baseDir = path.join(__dirname);
-  } else {
-    console.log("We are in the distribution environment!");
-    baseDir = path.join(process.resourcesPath);
-  }
+  // Change where we look for resources based on if we're developing or actually in a distribution package.
+  var baseDir = resolveBaseDir();  
   console.log("baseDir: " + baseDir);
 
+  // Figuring out where to look for OpenLabeling's launch file 
   var OLMainFilePath = path.resolve(path.join(baseDir, "extraResources", "OpenLabeling", "main", "main.py"));
   console.log("Launching OpenLabeling from path " + OLMainFilePath);
-  console.log("Using python interpreter located at " + PythonPath);
-  var olProcess = spawn(PythonPath, [ OLMainFilePath, "-u", baseDir ] );
 
-  // Debug streams, essentially
+  const PythonPath = "/usr/bin/python3"; 
+  console.log("Using python interpreter located at " + PythonPath);
+
+  // Actually spawning the process and setting up listeners for all its streams 
+  // -u removes stream buffers so we get all output immediately 
+  var olProcess = spawn(PythonPath, [ OLMainFilePath, "-u", baseDir ] );
   olProcess.stdout.on("data", (chunk) => { console.log("stdout: " + chunk); });
   olProcess.stderr.on("data", (chunk) => { console.log("stderr: " + chunk); });
   olProcess.on("close", (code) => {
     console.log("Child process exited with code " + code + ".");
-    uploadOutput(client);
+    uploadOutput(client, videoNames);
   });
+}
+
+// This function returns a path to our base directory, sensing whether we're in development or distribution
+function resolveBaseDir() {
+  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
+    console.log("We are in the development environment!");
+    return path.join(__dirname);
+  } else {
+    console.log("We are in the distribution environment!");
+    return path.join(process.resourcesPath);
+  }
 }
 
 // Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
@@ -123,7 +128,6 @@ function login() {
   }
 }
 
-
 async function loginPostClient(client) {
 
   console.log("Got Client Object: ", client);
@@ -147,11 +151,26 @@ async function loginPostClient(client) {
           stream.pipe(writeStream);
           writeStream.on("close", function () {
             onScreenDebug("Status: Downloaded files. Opening OpenLabeling!");
-            launchOpenLabeling(client);
+            let videoNames = getVideoNamesFromFilesObject(files);
+            launchOpenLabeling(client, videoNames);
           });
         });
       });
     });
+}
+
+function getVideoNamesFromFilesObject(files) {
+
+  let endObject = []; 
+
+  // Only change we have to make is replacing the period with an underscore 
+  for (let i = 0; i < files.entries.length; i++) {
+    endObject[i] = files.entries[i].name.replace(".", "_");
+  }
+
+  console.log("getVideoNamesFromFilesObject return: ", endObject);
+
+  return endObject;
 }
 
 async function removeChildrenOfElement(element) {
@@ -176,12 +195,52 @@ function onScreenDebug(text) {
   2. Goes into that folder 
   3. Uploads a zip file with both the individual video frames and their .txt throughput 
 */
-function uploadOutput(client) {
+function uploadOutput(client, videoNames) {
+
   const BOX_OUTPUT_FOLDER_ID = "105343099285";
 
   // Getting folder places organized 
-  const OPENLABELING_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
-  const OPENLABELING_OUTPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "output");
+  const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
+  const OL_YOLO_OUTPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "output", "YOLO_darknet");
 
-  // Grouping frames 
+  // Need to put complete file paths in here 
+  // Go into OL_YOLO_OUTPUT_FOLDER and use everything in there (should be all .txt files) 
+  // Go into OL_INPUT_VIDEO_FOLDERS and use everything in there (should be all the corresponding .jpg files) 
+  // TODO: Make all these requests actually asynchronous, shouldn't be necessary unless there's a noticeable delay here. There really shouldn't be a relevant delay, fs operations are hella quick 
+  let filesToUpload = []; 
+
+  // Add all the files from the input folders 
+  for (let i = 0; i < videoNames.length; i++) {
+
+    let currentBaseFolder = path.join(OL_INPUT_FOLDER, videoNames[i]); 
+    let dirContents = fs.readdirSync(currentBaseFolder);
+
+    // Make them all absolute (well, relative to base directory) paths
+    for (let j = 0; j < dirContents.length; j++) {
+      dirContents[j] = path.join(OL_INPUT_FOLDER, dirContents[j]); 
+    }
+
+    filesToUpload = filesToUpload.concat(dirContents);
+  }
+
+  // Add all the files from the output folders 
+  for (let i = 0; i < videoNames.length; i++) {
+
+    currentBaseFolder = path.join(OL_YOLO_OUTPUT_FOLDER, videoNames[i]); 
+    let dirContents = fs.readdirSync(currentBaseFolder);
+
+    // Make them all absolute (well, relative to base directory) paths
+    for (let j = 0; j < dirContents.length; j++) {
+      dirContents[j] = path.join(OL_YOLO_OUTPUT_FOLDER, dirContents[j]); 
+    }
+
+    filesToUpload = filesToUpload.concat(dirContents);
+  }
+
+  console.log("filesToUpload: ", filesToUpload);
+
+  // Zip those files 
+  // TODO: Figure out if I want to zip by video, or what, or how exactly I'm tracking which files have been boxed yet 
+
+  // Upload them to Box 
 }

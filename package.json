@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/aacitelli/Scylla#readme",
   "dependencies": {
+    "archiver": "^3.1.1",
     "box-node-sdk": "^1.30.0",
     "box-ui-elements": "^11.0.2",
     "glob": "^7.1.6",
