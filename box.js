@@ -207,40 +207,38 @@ function uploadOutput(client, videoNames) {
   // Go into OL_YOLO_OUTPUT_FOLDER and use everything in there (should be all .txt files) 
   // Go into OL_INPUT_VIDEO_FOLDERS and use everything in there (should be all the corresponding .jpg files) 
   // TODO: Make all these requests actually asynchronous, shouldn't be necessary unless there's a noticeable delay here. There really shouldn't be a relevant delay, fs operations are hella quick 
-  let filesToUpload = []; 
-
+  
   // Add all the files from the input folders 
   for (let i = 0; i < videoNames.length; i++) {
 
-    let currentBaseFolder = path.join(OL_INPUT_FOLDER, videoNames[i]); 
-    let dirContents = fs.readdirSync(currentBaseFolder);
+    let filesToUpload = []; 
 
-    // Make them all absolute (well, relative to base directory) paths
-    for (let j = 0; j < dirContents.length; j++) {
-      dirContents[j] = path.join(OL_INPUT_FOLDER, videoNames[i], dirContents[j]); 
+    //* Get a big list of all the files in the important I/O directories 
+    let currentInputSubfolder = path.join(OL_INPUT_FOLDER, videoNames[i]); 
+    let currentOutputSubfolder = path.join(OL_YOLO_OUTPUT_FOLDER, videoNames[i]); 
+    let inputFiles = fs.readdirSync(currentInputSubfolder);
+    let outputFiles = fs.readdirSync(currentOutputSubfolder)
+
+    //* Queue the Input/Output files for the current video to be zipped 
+    for (let j = 0; j < inputFiles.length; j++) {
+      filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], dirContents[j])); 
     }
 
-    filesToUpload = filesToUpload.concat(dirContents);
-  }
-
-  // Add all the files from the output folders 
-  for (let i = 0; i < videoNames.length; i++) {
-
-    currentBaseFolder = path.join(OL_YOLO_OUTPUT_FOLDER, videoNames[i]); 
-    let dirContents = fs.readdirSync(currentBaseFolder);
-
-    // Make them all absolute (well, relative to base directory) paths
-    for (let j = 0; j < dirContents.length; j++) {
-      dirContents[j] = path.join(OL_YOLO_OUTPUT_FOLDER, videoNames[i], dirContents[j]); 
+    for (let j = 0; j < outputFiles.length; j++) {
+      filesToUpload = filesToUpload.concat(path.join(OL_YOLO_OUTPUT_FOLDER, videoNames[i], dirContents[j])); 
     }
 
-    filesToUpload = filesToUpload.concat(dirContents);
+    //* Zip everything in the array we just threw everything into 
+    // The Zip file is VideoName_StartFrame_EndFrame
+    // Not going to build in support for any non-contiguous boxing segments unless it becomes a problem...
+    // In this case, I'll probalby make it VideoName_StartFrame1_EndFrame1_StartFrame2_EndFrame2 and so on  
+
+    //* Start the upload to box 
+    // (this is promise-based, so it will process the next one on disk right away while the network request processes)
+    var stream = fs.createReadStream(absVideoPath);
+    client.files.uploadFile(BOX_OUTPUT_FOLDER_ID, videoNames[i], stream)
+    .then(file => {
+      console.log("Finished uploading file w/ name " + file.entries.name);
+    });
   }
-
-  console.log("filesToUpload: ", filesToUpload);
-
-  // Zip those files 
-  // TODO: Figure out if I want to zip by video, or what, or how exactly I'm tracking which files have been boxed yet 
-
-  // Upload them to Box 
 }
