@@ -4,36 +4,51 @@
 
     <meta charset="UTF-8">
     <title>Scylla</title>
-    <link rel="stylesheet" href="frontend/startup.css" />
-    <link href="https://fonts.googleapis.com/css?family=Lato|ZCOOL+KuaiLe&display=swap" rel="stylesheet">
-    <script src="./startup.js"></script>
 
-    <!-- Electron needs this, for whatever reason. 
-      See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
+    <link rel="stylesheet" href="frontend/navbar.css" />
+    <link rel="stylesheet" href="frontend/startup.css" />
+    
+    <!-- Electron needs this, for whatever reason. See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
     
   </head>
   <body>
 
-    <div id="centeredContainer">
-      <div>
-        <img src="./static/teamlogo.png" />
+    <nav id="navbar">
+
+      <div id="branding">
+
+        <img src="./static/WithText.png" />
         <h1>Scylla</h1>
-        <a id="boxButton" href="box.html">Log Into Box</a>
-        <a id="localFilesButton" href="./localfiles.html">Use Local Files</a>   
-        <!-- <button id="localFilesButton" onClick="openBoxFilePicker()">boxing</button>        -->
-      </div>      
-    </div>
-    
-    <div id="processInformation">
-      <button>Hello!</button>
-      <div>Scylla, Version 0.2</div>      
-      <div>        
-        Node <script>document.write(process.versions.node)</script>,
-        Chrome <script>document.write(process.versions.chrome)</script>,
-        Electron <script>document.write(process.versions.electron)</script>
+
       </div>
-    </div>   
+
+      <ul>
+        <li><a href="startup.html">Home</a></li>
+        <li><a href="box.html">Box Stuff</a></li>
+        <li><a href="https://github.com/aacitelli/Scylla">GitHub Repo</a></li>
+      </ul>
+
+      <div id="processInformation">
+        <div>Scylla, Version 1.0</div>      
+        <div>        
+          Node <script>document.write(process.versions.node)</script>,
+          Chrome <script>document.write(process.versions.chrome)</script>,
+          Electron <script>document.write(process.versions.electron)</script>
+        </div>
+      </div>   
+    </nav>
+
+    <div id="rightContainer">
+      <div id="centeredContainer">
+        <div>
+          <a id="boxButton" href="box.html">Log Into Box</a>   
+       </div>      
+      </div>
+    </div>
+
+    <!-- Scrips should generally be run after all the DOM is initialized -->
+    <script src="./startup.js"></script>
 
   </body>
 </html>

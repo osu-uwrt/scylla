@@ -1,5 +1,4 @@
-body 
-{
+body {
     margin: 0;
     padding: 0;
 
@@ -7,35 +6,22 @@ body
     height: 100vh;
 
     font-family: "Lato", sans-serif;
+    background-color: #363636;
+    color: white;
 }
 
-#processInformation 
-{
+#processInformation {
     position: absolute;
     left: 10px;
     bottom: 10px;
 }
 
-#centeredContainer
-{
+#centeredContainer {
     width: 100%;
+    height: 100%;
     text-align: center;
 
-    > div 
-    {
-        padding-top: 7.5%;
-
-        > h1 
-        {
-            font-size: 48px;
-            font-weight: 900;
-            font-family: "ZCool Kuaile", cursive;
-        }
-
-        > img 
-        {
-            width: 400px;
-        }
+    > div {
 
         > a
         {
@@ -55,16 +41,6 @@ body
             &:hover 
             {
                 background-color: #ac0000;
-            }
-        }
-
-        > #localFilesButton 
-        {
-            background-color: #666666;
-
-            &:hover 
-            {
-                background-color: #545454;
             }
         }
     }    

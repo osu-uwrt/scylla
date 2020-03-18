@@ -1,0 +1,62 @@
+#navbar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: #BD0000;
+  color: white;
+  width: 300px;
+  height: 100%;
+}
+
+#navbar #branding {
+  text-align: center;
+}
+
+#navbar #branding > img {
+  width: 250px;
+  padding: 25px;
+}
+
+#navbar > ul {
+  padding-left: 0;
+}
+
+#navbar > ul > li {
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+  width: 300px;
+  height: 50px;
+}
+
+#navbar > ul > li > a {
+  display: block;
+  padding-left: 40px;
+  width: calc(100% - 40px);
+  height: 100%;
+  color: white;
+  line-height: 50px;
+  text-decoration: none;
+}
+
+#navbar > ul > li > a:hover {
+  background-color: #FF0000;
+}
+
+#navbar #processInformation {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+}
+
+#navbar, #rightContainer {
+  display: inline-block;
+}
+
+#rightContainer {
+  position: absolute;
+  left: 300px;
+  top: 0;
+  width: calc(100% - 300px);
+}
+/*# sourceMappingURL=navbar.css.map */
