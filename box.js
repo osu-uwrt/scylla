@@ -1,6 +1,7 @@
 // TODO: Redo the styling to be dark mode (cause light mode sucks) 
 // General Dependencies 
 const electron = require('electron');
+var rimraf = require("rimraf");
 
 // Interfacing w/ Box API 
 var BoxSDK = require("box-node-sdk"); // Interface w/ Box API
@@ -41,7 +42,7 @@ function launchOpenLabeling(client, videoNames) {
 function resolveBaseDir() {
   if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
     console.log("We are in the development environment!");
-    return path.join(__dirname);
+    return __dirname;
   } else {
     console.log("We are in the distribution environment!");
     return path.join(process.resourcesPath);
@@ -181,7 +182,6 @@ async function removeChildrenOfElement(element) {
 
 function clearInputDirectory() {
   console.log("Deleting everything in the /input folder before we download anything.");
-  var rimraf = require("rimraf");
   rimraf.sync(path.join("extraResources", "OpenLabeling", "main", "input", "*"));
 }
 
@@ -212,33 +212,81 @@ function uploadOutput(client, videoNames) {
   for (let i = 0; i < videoNames.length; i++) {
 
     let filesToUpload = []; 
+    let filesToUploadNames = []; 
 
     //* Get a big list of all the files in the important I/O directories 
     let currentInputSubfolder = path.join(OL_INPUT_FOLDER, videoNames[i]); 
     let currentOutputSubfolder = path.join(OL_YOLO_OUTPUT_FOLDER, videoNames[i]); 
     let inputFiles = fs.readdirSync(currentInputSubfolder);
-    let outputFiles = fs.readdirSync(currentOutputSubfolder)
+    let outputFiles = fs.readdirSync(currentOutputSubfolder);
 
     //* Queue the Input/Output files for the current video to be zipped 
     for (let j = 0; j < inputFiles.length; j++) {
-      filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], dirContents[j])); 
+      filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], inputFiles[j])); 
+      filesToUploadNames = filesToUploadNames.concat(inputFiles[j]);
     }
 
     for (let j = 0; j < outputFiles.length; j++) {
-      filesToUpload = filesToUpload.concat(path.join(OL_YOLO_OUTPUT_FOLDER, videoNames[i], dirContents[j])); 
+      filesToUpload = filesToUpload.concat(path.join(OL_YOLO_OUTPUT_FOLDER, videoNames[i], outputFiles[j])); 
+      filesToUploadNames = filesToUploadNames.concat(outputFiles[j]);
     }
 
     //* Zip everything in the array we just threw everything into 
     // The Zip file is VideoName_StartFrame_EndFrame
     // Not going to build in support for any non-contiguous boxing segments unless it becomes a problem...
     // In this case, I'll probalby make it VideoName_StartFrame1_EndFrame1_StartFrame2_EndFrame2 and so on  
+    // It'll be a miracle if any of this works 
+    var writeStream = fs.createWriteStream(path.join(__dirname, videoNames[i] + ".zip"));
+    var zipFile = archiver("zip", { zlib: { level: 9 } });
 
-    //* Start the upload to box 
-    // (this is promise-based, so it will process the next one on disk right away while the network request processes)
-    var stream = fs.createReadStream(absVideoPath);
-    client.files.uploadFile(BOX_OUTPUT_FOLDER_ID, videoNames[i], stream)
-    .then(file => {
-      console.log("Finished uploading file w/ name " + file.entries.name);
+    // listen for all archive data to be written
+    // 'close' event is fired only when a file descriptor is involved
+    writeStream.on('close', function() {
+      console.log(zipFile.pointer() + ' total bytes');
+      console.log('archiver has been finalized and the output file descriptor has closed.');
     });
+    
+    // This event is fired when the data source is drained no matter what was the data source.
+    // It is not part of this library but rather from the NodeJS Stream API.
+    // @see: https://nodejs.org/api/stream.html#stream_event_end
+    writeStream.on('end', function() {
+      console.log('Data has been drained');
+    });
+    
+    // good practice to catch warnings (ie stat failures and other non-blocking errors)
+    zipFile.on('warning', function(err) {
+      if (err.code === 'ENOENT') {
+        // log warning
+      } else {
+        // throw error
+        throw err;
+      }
+    });
+    
+    // good practice to catch this error explicitly
+    zipFile.on('error', function(err) {
+      throw err;
+    });
+
+    zipFile.pipe(writeStream);
+    for (let j = 0; j < filesToUpload.length; j++) {
+      // Adds the file by name, not by path 
+      zipFile.file(filesToUpload[j], { name: filesToUploadNames[j] });
+    } 
+    zipFile.finalize();
+
+    // Fires when the zip file is finished, presumably 
+    writeStream.on("end", function() {
+      console.log("zip file for current folder written!");
+
+      //* Start the upload to box, as the zip file has completed 
+      // (this is promise-based, so it will process the next one on disk right away while the network request processes)
+      // TODO: I've lost motivation, fix this 
+      var stream = fs.createReadStream(filesToUpload[99999999999999999]);
+      client.files.uploadFile(BOX_OUTPUT_FOLDER_ID, videoNames[i], stream)
+      .then(file => {
+        console.log("Finished uploading file w/ name " + file.entries.name);
+      });
+    }); 
   }
 }
