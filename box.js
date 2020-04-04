@@ -29,6 +29,8 @@ var videoNames;
 // Does exactly what you think it does 
 function launchOpenLabeling(client, videoNames) {
 
+  clearDirectory(path.join(OL_OUTPUT_FOLDER, "../"));
+
   // Change where we look for resources based on if we're developing or actually in a distribution package.
   var baseDir = resolveBaseDir();
   console.log("baseDir: " + baseDir);
@@ -195,13 +197,15 @@ function uploadOutput(client) {
 
     //* Queue the Input/Output files for the current video to be zipped 
     for (let j = 0; j < inputFiles.length; j++) {
-      filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], inputFiles[j]));
-      filesToUploadNames = filesToUploadNames.concat(inputFiles[j]);
-    }
 
-    for (let j = 0; j < outputFiles.length; j++) {
-      filesToUpload = filesToUpload.concat(path.join(OL_OUTPUT_FOLDER, videoNames[i], outputFiles[j]));
-      filesToUploadNames = filesToUploadNames.concat(outputFiles[j]);
+      // If that file isn't empty, add all its stuff to what we're zipping 
+      if (fs.statSync(path.join(OL_OUTPUT_FOLDER, videoNames[i], inputFiles[j].replace(".jpg", ".txt"))).size != 0) {
+        filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], inputFiles[j]));
+        filesToUploadNames = filesToUploadNames.concat(inputFiles[j]);
+
+        filesToUpload = filesToUpload.concat(path.join(OL_OUTPUT_FOLDER, videoNames[i], outputFiles[j]));
+        filesToUploadNames = filesToUploadNames.concat(outputFiles[j]);
+      }      
     }
 
     console.debug("filesToUpload: ", filesToUpload);
@@ -212,9 +216,10 @@ function uploadOutput(client) {
     // Not going to build in support for any non-contiguous boxing segments unless it becomes a problem...
     // In this case, I'll probalby make it VideoName_StartFrame1_EndFrame1_StartFrame2_EndFrame2 and so on  
     // It'll be a miracle if any of this works 
-    var writeStream = fs.createWriteStream(path.join(__dirname, videoNames[i] + ".zip"));
-    var zipFile = archiver("zip", { zlib: { level: 9 } });
 
+    zipAndUploadFiles(filesToUpload, filesToUploadNames, videoNames[i], path.join("ZipFiles", videoNames[i] + ".zip")); 
+
+    /*
     // Fires when the zip file is finished, presumably 
     writeStream.on("end", function () {
       console.log("zip file for current folder written!");
@@ -228,7 +233,37 @@ function uploadOutput(client) {
           console.log("Finished uploading file w/ name " + file.entries.name);
         });
     });
+    */
   }
+}
+
+function zipAndUploadFiles(filesToUpload, filesToUploadNames, videoName, zipPath) {
+  var output = fs.createWriteStream(path.join(zipPath));
+  var archive = archiver("zip", { zlib: { level: 9 } } ); 
+
+  output.on("close", function() {
+    console.log(archive.pointer() + " total bytes"); 
+    console.log('archiver has been finalized and the output file descriptor has closed.');
+  }); 
+
+  // good practice to catch this error explicitly
+  archive.on('error', function(err) {
+    throw err;
+  });
+
+  // pipe archive data to the file
+  archive.pipe(output);
+  
+  for (let i = 0; i < filesToUpload.length; i++) {
+    archive.file(filesToUpload[i], { name: filesToUploadNames[i] });
+  }
+
+  archive.finalize();
+
+  // Only clear the output directory after I make the .zip file
+  // clearDirectory(path.join(OL_OUTPUT_FOLDER, videoName));
+
+  // Upload the file 
 }
 
 // Updates the front-end display based on the files object returned from client.folder.get("FOLDER_ID") on https://github.com/box/box-node-sdk/blob/master/docs/folders.md
@@ -271,4 +306,5 @@ function resolveBaseDir() {
 function clearDirectory(filePath) {
   console.debug("Deleting everything in directory " + filePath);
   rimraf.sync(path.join(filePath, "*"));
+  console.debug("Deleted everything in directory " + filePath);
 }

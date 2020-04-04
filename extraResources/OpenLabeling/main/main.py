@@ -24,6 +24,9 @@ sitePackagesAddress = os.path.join(basePath, "extraResources", "site_packages")
 print("Looking for site_packages at this path: " + str(sitePackagesAddress))
 sys.path.append(sitePackagesAddress)
 
+# If you have a ros installation, it pulls cv2 from that for whatever reason, so we get rid of that 
+sys.path.remove("/opt/ros/kinetic/lib/python2.7/dist-packages")
+
 import argparse
 import glob
 import json
