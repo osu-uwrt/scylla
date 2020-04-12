@@ -4,5 +4,5 @@
 module.exports = {
     CLIENT_ID: "kzxvcftcf0c0ke3ypaifv0dqd7spzy69", 
     CLIENT_SECRET: "d1Pl9cZORTgCUwqx3G45CXbWN5H6pzca", 
-    DEV_TOKEN: "2GT2mZBKpbigjUxqv2DBpKaZ7pBoizBG"
+    DEV_TOKEN: "b8KvgGlf5tONcp5l6g85iNcH2QXLxo4A"
 }

@@ -165,14 +165,6 @@ async function loginPostClient() {
   });
 }
 
-  // If we end when we're still on bboxed frames, put the last frame as the end of the bboxed frames 
-  if (currentlyActive) {
-    framesArr.push(frames.length - 1); 
-  }
-
-  return framesArr; 
-}
-
 /* 
   1. Makes a folder with the name of the video on box if one doesn't exist 
   2. Goes into that folder 
@@ -181,10 +173,6 @@ async function loginPostClient() {
 
 // imageNames, videoNames 
 function uploadOutput() {
-
-  // Organizational reasons 
-  let inputDir = OL_INPUT_DIRECTORY;
-  let outputDir = OL_OUTPUT_DIRECTORY;
 
   // Iterate through all the images we need to upload and just straight upload them 
   const IMAGE_OUTPUT_DIRECTORY_ID = "107635394307"; 
@@ -208,8 +196,45 @@ function uploadOutput() {
   const OUTPUT_DIRECTORY_ID = "105343099285"; 
   for (let i = 0; i < videoNames.length; i++) {
     let filledFrames = getFilledFrames(videoNames[i]);
-    let zipName = getZipName(videoName, filledFrames);  
+    let zipName = getZipName(videoNames[i], filledFrames);  
+
+    // Returns an actual array with file paths to the non-empty files we need to grab 
+    let nonEmptyFilePaths = getFilePathsToNonEmptyFile(videoNames[i], filledFrames);
+
+    // Actually zip all the files together 
+    zipFiles(zipName, nonEmptyFilePaths);
+
+    // Start the upload of that .zip file to Box 
+    let readStream = fs.createReadStream(path.join(OL_OUTPUT_DIRECTORY, zipName));  
+    client.files.uploadFile(OUTPUT_DIRECTORY_ID, zipName, readStream)
+    .then(file => {
+      console.log("Finished upload of .zip file named " + file.entries[0].name); 
+    })
   }
+}
+
+function getFilePathsToNonEmptyFile(videoName, filledFrames) {
+
+  let videoSpecificInputDir = path.join(OL_INPUT_DIRECTORY, videoName.replace(".", "_"));
+  let videoSpecificOutputDir = path.join(OL_OUTPUT_DIRECTORY, "YOLO_darknet", videoName.replace(".", "_"));
+
+  let returnArr = []; 
+
+  // We can assume filledFrames is even-length, so this doesn't error 
+  for (let i = 0; i < filledFrames.length; i += 2) {
+    
+    let currentStartIndex = filledFrames[i]; 
+    let currentEndIndex = filledFrames[i + 1]; 
+
+    // TODO: Figure out if OpenLabeling always outputs .jpg files (can probably wildcard this b/c there'll only be one file with that file name regardless of file extension)
+    // Adding paths to the input/output files
+    for (let j = currentStartIndex; j <= currentEndIndex; j++) {
+      returnArr = returnArr.concat(path.join(videoSpecificInputDir, videoName + "_" + j + ".jpg")); 
+      returnArr = returnArr.concat(path.join(videoSpecificOutputDir, videoName + "_" + j + ".txt"));
+    } 
+  }
+
+  return returnArr; 
 }
 
 // ! EVERYTHING BELOW HERE IS A HELPER FUNCTION
@@ -314,6 +339,12 @@ function getFilledFrames(videoFileName) {
       }
     }
   }
+
+  if (currentlyActive) {
+    framesArr.push(frames.length - 1); 
+  }
+
+  return framesArr;
 }
 
 // Does exactly what you think it does 
@@ -345,7 +376,6 @@ function getVideoImageNames() {
   // TODO: Standardize these criteria with the list of file formats OpenLabeling actually supports (currently assumes .mp4 videos and .jpg, .jpeg, or .png images)
   files.forEach(file => {
       console.log("Current File Name: " + file);
-      console.log("Current file is a " + fileType(file) + ".");
 
       let fileType = getFileType(file); 
       if (fileType === "video") {
@@ -386,6 +416,7 @@ function resolveBaseDir() {
 
 function toTXTFileExt(fileName) {
   fileName = fileName.substring(0, fileName.indexOf(".")); 
+  console.log("Given file " + fileName + ", the .txt version is " + fileName + ".txt");
   return fileName + ".txt";
 }
 
@@ -403,5 +434,8 @@ function getZipName(videoName, filledFrames) {
     endString += filledFrames[i + 1]; 
   }
 
+  endString += ".zip";
+
+  console.log("Given videoName " + videoName + " and filledFrames", filledFrames, "zip name is " + endString);
   return endString; 
 }
