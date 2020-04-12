@@ -14,42 +14,39 @@ const path = require("path");
 var spawn = require("child_process").spawn;
 var fs = require("fs");
 
-/* General Process: 
+//* Global Variables (otherwise we'd pass them around EVERYWHERE)
+// File Paths 
+const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
+const OL_OUTPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "output", "YOLO_darknet");
 
-  - Whenever we actually open OpenLabeling, process the input folder and save names of the images and videos so we can use it later
-  - When we're done, process all images, then process all videos 
-    - For images, use the "images" directory on Box and just upload the image with its bbox data 
-    - For videos, read in files until we find the last one that was boxed. Upload the image files and corresponding YOLO output for everything up to that 
-      point, saving the zip file as VideoName_StartFrame1_EndFrame1_StartFrame2_EndFrame2... and so on.
-        - I consider it a safe assumption to make that box doesn't really have a name character limit, and each frame should only be max like 3-4 digits long
+// Box Folder IDs
+const BOX_INPUT_FOLDERID = "88879798045";
+const BOX_OUTPUT_FOLDERID = "105343099285";
+// const BOX_OUTPUT_IMAGES_FOLDERID = "107635394307";
 
-*/
-// Keeping track of the actual image and video names (global variables; We 
-// reference them so much that it's worth it)
-var imageNames = []; 
-var videoNames = []; 
-
-var baseDir; 
-const OL_INPUT_DIRECTORY = path.join("extraResources", "OpenLabeling", "main", "input"); 
-const OL_OUTPUT_DIRECTORY = path.join("extraResources", "OpenLabeling", "output"); 
+// Important Program Variables 
+var videoNames;
 
 // Does exactly what you think it does 
 function launchOpenLabeling() {
 
-  // Save our base directory and lists of images/files we are about to process in some global variables b/c we use them all over the place 
-  getVideoImageNames();
+  clearDirectory(path.join(OL_OUTPUT_FOLDER, "../"));
+
+  // Change where we look for resources based on if we're developing or actually in a distribution package.
+  var baseDir = resolveBaseDir();
+  console.log("baseDir: " + baseDir);
 
   // Figuring out where to look for OpenLabeling's launch file 
   let baseDir = resolveBaseDir();
   var OLMainFilePath = path.resolve(path.join(baseDir, "extraResources", "OpenLabeling", "main", "main.py"));
   console.log("Launching OpenLabeling from path " + OLMainFilePath);
 
-  const PythonPath = "/usr/bin/python3"; 
+  const PythonPath = "/usr/bin/python3";
   console.log("Using python interpreter located at " + PythonPath);
 
   // Actually spawning the process and setting up listeners for all its streams 
   // -u removes stream buffers so we get all output immediately 
-  var olProcess = spawn(PythonPath, [ OLMainFilePath, "-u", baseDir ] );
+  var olProcess = spawn(PythonPath, [OLMainFilePath, "-u", baseDir]);
   olProcess.stdout.on("data", (chunk) => { console.log("stdout: " + chunk); });
   olProcess.stderr.on("data", (chunk) => { console.log("stderr: " + chunk); });
   olProcess.on("close", (code) => {
@@ -64,8 +61,6 @@ var usingDevToken = true;
 login(); // Called when page loads (intent-based thing)
 function login() {
 
-  onScreenDebug("Status: Authenticating user into Box.");
-
   // Make an instance of the SDK with our client-specific details 
   // (tells the client which folders we have access to) 
   let login = require("./keys.js");
@@ -73,14 +68,18 @@ function login() {
 
   // If we're using a dev token, we don't have to go through all the rigamarole of getting an auth code 
   if (usingDevToken) {
+    console.debug("Using a dev token.");
     let login = require("./keys.js");
     client = sdk.getBasicClient(login.DEV_TOKEN);
-    loginPostClient();
+    console.debug("Successfully got client object.");
+    loginPostClient(client);
   }
 
   // We have to authenticate the user to get an auth code 
   // (we can do a persistent client this way that automatically refreshes codes though)
   else {
+
+    console.debug("Going through normal oauth (no dev token).");
 
     //! Have the user authenticate in via Box's workflow 
     const BrowserWindow = electron.remote.BrowserWindow;
@@ -96,6 +95,7 @@ function login() {
     var authorize_url = sdk.getAuthorizeURL({
       response_type: "code"
     });
+
     authWindow.loadURL(authorize_url);
     authWindow.show();
 
@@ -119,7 +119,8 @@ function login() {
             var TokenStore = require("./TokenStore");
             var tokenStore = new TokenStore("test");
             client = sdk.getPersistentClient(tokenInfo, tokenStore);
-            loginPostClient();
+            console.debug("Successfully got client object.");
+            loginPostClient(client);
           });
         }
 
@@ -130,39 +131,43 @@ function login() {
       }, 10);
     };
 
-    // Start off the async recursion chain 
+    // Start off the async recursion chain
     timeout();
   }
 }
 
 async function loginPostClient() {
 
-  // Client is now a global variable, b/c it's needed in a LOT of places
-  console.log("Got Client Object: ", client);
-  const BOX_RAW_FOLDER_ID = "88879798045";
-  const LOCAL_INPUT_FOLDER_PATH = path.join("extraResources", "OpenLabeling", "main", "input");
+  console.debug("Grabbing data from box raw folder id " + BOX_OUTPUT_FOLDERID);
+  console.debug("Videos were downloaded to " + OL_INPUT_FOLDER);
 
-  document.getElementById("loginRedo").style.display = "none"; // Get rid of backup re-authenticate button 
+  console.debug("Clearing input directory before we download to it.");
+  clearDirectory(OL_INPUT_FOLDER);
 
-  // TODO: Ideally, we don't automatically download everything in the folder, but rather have them select which file they want to box, *then* download it.
-  // TODO: Make it only display files that haven't been boxed yet.
-  clearInputDirectory();
-  client.folders.getItems(BOX_RAW_FOLDER_ID)
-  .then(files => {
-    console.log("All the files in the folder: ", files);
-    files.entries.forEach(file => {
-      onScreenDebug("Downloading files.");
-      client.files.getReadStream(file.id, null, function (err, stream) {
-        if (err) console.error("File Download Error: ", err);
-        let writeStream = fs.createWriteStream(path.join(LOCAL_INPUT_FOLDER_PATH, file.name));
-        stream.pipe(writeStream);
-        writeStream.on("close", function () {
-          onScreenDebug("Status: Downloaded files. Opening OpenLabeling!");
-          launchOpenLabeling();
+  console.debug("Making client.folder.getItems API call on box raw folder");
+  client.folders.getItems(BOX_INPUT_FOLDERID)
+    .then(files => {
+
+      console.debug("Got files object: ", files);
+
+      console.debug("Iterating through each file and downloading.");
+      files.entries.forEach(file => {
+
+        client.files.getReadStream(file.id, null, function (err, stream) {
+
+          if (err) console.error("File Download Error: ", err);
+
+          console.debug("File downloaded successfully. Writing to disk.");
+          let writeStream = fs.createWriteStream(path.join(OL_INPUT_FOLDER, file.name));
+          stream.pipe(writeStream);
+
+          writeStream.on("close", function () {
+            getVideoNamesFromFilesObject(files);
+            launchOpenLabeling(client, videoNames);
+          });
         });
       });
     });
-  });
 }
 
 /* 
@@ -304,6 +309,8 @@ function zipFiles(zipName, filePathsArr) {
   }); 
 }
 
+/* TODO: I merged a LOT of functions here, a lot will probably be overlaps */ 
+
 // Returns an array of format 
 // [FirstFilledIntervalStart, FirstFilledIntervalEnd, SecondFilledIntervalStart, SecondFilledIntervalEnd, ...] 
 // given an actual video name. All the file paths are Scylla-specific, basically. 
@@ -438,4 +445,140 @@ function getZipName(videoName, filledFrames) {
 
   console.log("Given videoName " + videoName + " and filledFrames", filledFrames, "zip name is " + endString);
   return endString; 
+/* 
+  1. Makes a folder with the name of the video on box if one doesn't exist 
+  2. Goes into that folder 
+  3. Uploads a zip file with both the individual video frames and their .txt throughput 
+*/
+function uploadOutput(client) {
+
+  // Need to put complete file paths in here 
+  // Go into OL_YOLO_OUTPUT_FOLDER and use everything in there (should be all .txt files) 
+  // Go into OL_INPUT_VIDEO_FOLDERS and use everything in there (should be all the corresponding .jpg files) 
+  // TODO: Make all these requests actually asynchronous, shouldn't be necessary unless there's a noticeable delay here. There really shouldn't be a relevant delay, fs operations are hella quick 
+
+  // Add all the files from the input folders 
+  for (let i = 0; i < videoNames.length; i++) {
+
+    let filesToUpload = [];
+    let filesToUploadNames = [];
+
+    //* Get a big list of all the files in the important I/O directories 
+    let currentInputSubfolder = path.join(OL_INPUT_FOLDER, videoNames[i]);
+    let currentOutputSubfolder = path.join(OL_OUTPUT_FOLDER, videoNames[i]);
+    let inputFiles = fs.readdirSync(currentInputSubfolder);
+    let outputFiles = fs.readdirSync(currentOutputSubfolder);
+
+    //* Queue the Input/Output files for the current video to be zipped 
+    for (let j = 0; j < inputFiles.length; j++) {
+
+      // If that file isn't empty, add all its stuff to what we're zipping 
+      if (fs.statSync(path.join(OL_OUTPUT_FOLDER, videoNames[i], inputFiles[j].replace(".jpg", ".txt"))).size != 0) {
+        filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], inputFiles[j]));
+        filesToUploadNames = filesToUploadNames.concat(inputFiles[j]);
+
+        filesToUpload = filesToUpload.concat(path.join(OL_OUTPUT_FOLDER, videoNames[i], outputFiles[j]));
+        filesToUploadNames = filesToUploadNames.concat(outputFiles[j]);
+      }      
+    }
+
+    console.debug("filesToUpload: ", filesToUpload);
+    console.debug("filesToUploadNames: ", filesToUploadNames);
+
+    //* Zip everything in the array we just threw everything into 
+    // The Zip file is VideoName_StartFrame_EndFrame
+    // Not going to build in support for any non-contiguous boxing segments unless it becomes a problem...
+    // In this case, I'll probalby make it VideoName_StartFrame1_EndFrame1_StartFrame2_EndFrame2 and so on  
+    // It'll be a miracle if any of this works 
+
+    zipAndUploadFiles(filesToUpload, filesToUploadNames, videoNames[i], path.join("ZipFiles", videoNames[i] + ".zip")); 
+
+    /*
+    // Fires when the zip file is finished, presumably 
+    writeStream.on("end", function () {
+      console.log("zip file for current folder written!");
+
+      //* Start the upload to box, as the zip file has completed 
+      // (this is promise-based, so it will process the next one on disk right away while the network request processes)
+      // TODO: I've lost motivation, fix this 
+      var stream = fs.createReadStream(filesToUpload[99999999999999999]);
+      client.files.uploadFile(BOX_OUTPUT_FOLDERID, videoNames[i], stream)
+        .then(file => {
+          console.log("Finished uploading file w/ name " + file.entries.name);
+        });
+    });
+    */
+  }
+}
+
+function zipAndUploadFiles(filesToUpload, filesToUploadNames, videoName, zipPath) {
+  var output = fs.createWriteStream(path.join(zipPath));
+  var archive = archiver("zip", { zlib: { level: 9 } } ); 
+
+  output.on("close", function() {
+    console.log(archive.pointer() + " total bytes"); 
+    console.log('archiver has been finalized and the output file descriptor has closed.');
+  }); 
+
+  // good practice to catch this error explicitly
+  archive.on('error', function(err) {
+    throw err;
+  });
+
+  // pipe archive data to the file
+  archive.pipe(output);
+  
+  for (let i = 0; i < filesToUpload.length; i++) {
+    archive.file(filesToUpload[i], { name: filesToUploadNames[i] });
+  }
+
+  archive.finalize();
+
+  // Only clear the output directory after I make the .zip file
+  // clearDirectory(path.join(OL_OUTPUT_FOLDER, videoName));
+
+  // Upload the file 
+}
+
+// Updates the front-end display based on the files object returned from client.folder.get("FOLDER_ID") on https://github.com/box/box-node-sdk/blob/master/docs/folders.md
+// We could also just feed in the folder id here, but we don't want more than one network request to the same thing 
+function displayFolderContents(files) {
+
+  // TODO: Clark, write this. I already have all the calls to this function done. 
+  return;
+
+}
+
+// ! BELOW HERE ARE THE LESS IMPORTANT / UTILITY FUNCTIONS 
+
+// Fills videoNames (global variable) given the files object 
+function getVideoNamesFromFilesObject(files) {
+  videoNames = [];
+  for (let i = 0; i < files.entries.length; i++) {
+    videoNames[i] = files.entries[i].name.replace(".", "_");
+  }
+}
+
+async function removeChildrenOfElement(element) {
+  while (element.lastElementChild) {
+    element.removeChild(element.lastElementChild);
+  }
+}
+
+// This function returns a path to our base directory, sensing whether we're in development or distribution
+function resolveBaseDir() {
+  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
+    console.log("We are in the development environment!");
+    return __dirname;
+  } else {
+    console.log("We are in the distribution environment!");
+    return path.join(process.resourcesPath);
+  }
+}
+
+// Performs `rm -rf` at the given file path 
+function clearDirectory(filePath) {
+  console.debug("Deleting everything in directory " + filePath);
+  rimraf.sync(path.join(filePath, "*"));
+  console.debug("Deleted everything in directory " + filePath);
 }
