@@ -27,6 +27,7 @@
     "box-node-sdk": "^1.31.0",
     "box-ui-elements": "^11.0.2",
     "glob": "^7.1.6",
+    "natural-orderby": "^2.0.3",
     "ncp": "^2.0.0",
     "node-fetch": "^2.6.0",
     "python-shell": "^1.0.8",

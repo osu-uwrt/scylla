@@ -1,4 +1,8 @@
-/* Shamelessly ripped from the box-node-sdk page, thanks fam 
+/* 
+	This is essentially the data structure that box-node-sdk uses to store authentication 
+	tokens that it uses during GET, POST, etc. requests to the actual Box servers. 
+
+	Shamelessly ripped from the box-node-sdk GitHub wiki 
     https://raw.githubusercontent.com/box/box-node-sdk/master/examples/token-store.js
 */ 
 

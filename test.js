@@ -1,3 +1,7 @@
+// This file was just me testing to see if we could just import stuff from other files right away without worrying about module exports. 
+// We can; It's pretty easy. I just haven't bothered because then you have to worry about what directory the JavaScript is actually
+// running from, which can screw up stuff like relative paths. 
+
 console.log(getZipName("videoName_24.mp4", [0, 3, 6, 11, 15, 19])); 
 function getZipName(videoName, filledFrames) {
 

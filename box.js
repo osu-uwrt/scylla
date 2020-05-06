@@ -2,6 +2,7 @@
 // General Dependencies 
 const electron = require('electron');
 var rimraf = require("rimraf");
+var orderBy = require("natural-orderby"); // Needed to step through video files in Natural/"Human" Order, not Alphabetical Order. Look those up if confused. 
 
 // Interfacing w/ Box API 
 var BoxSDK = require("box-node-sdk"); // Interface w/ Box API
@@ -15,19 +16,17 @@ var spawn = require("child_process").spawn;
 var fs = require("fs");
 
 //* Global Variables (otherwise we'd pass them around EVERYWHERE)
-// File Paths 
 const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
 const OL_OUTPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "output", "YOLO_darknet");
-
-// Box Folder IDs
 const BOX_INPUT_FOLDERID = "88879798045";
-const BOX_OUTPUT_FOLDERID = "105343099285";
-// const BOX_OUTPUT_IMAGES_FOLDERID = "107635394307";
+const BOX_OUTPUT_FOLDERID = "105343099285"; 
+var videoNames; // Array of strings of each video name 
+var numVideos; // Integer tracking how many videos we are processing. 
 
-// Important Program Variables 
-var videoNames;
-
-// Does exactly what you think it does 
+/* 
+  PURPOSE: Figures out where OpenLabeling is and launches it. 
+  When done, passes control to the function that uploads the results. 
+*/ 
 function launchOpenLabeling() {
 
   clearDirectory(path.join(OL_OUTPUT_FOLDER, "../"));
@@ -36,8 +35,7 @@ function launchOpenLabeling() {
   var baseDir = resolveBaseDir();
   console.log("baseDir: " + baseDir);
 
-  // Figuring out where to look for OpenLabeling's launch file 
-  let baseDir = resolveBaseDir();
+  // Figuring out where we launch OpenLabeling from 
   var OLMainFilePath = path.resolve(path.join(baseDir, "extraResources", "OpenLabeling", "main", "main.py"));
   console.log("Launching OpenLabeling from path " + OLMainFilePath);
 
@@ -56,17 +54,18 @@ function launchOpenLabeling() {
 }
  
 // Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
-// TODO: Set this to false when building for production. To be super performace oriented, we could get rid of all the code paths we don't follow, but that's a negligible performance increase and this makes development way quicker. 
+/* PURPOSE: Goes through all the authentication stuff and gets us a fully authenticated client object that we can use to actually make requests */
+// TODO: Set this to false when actually building for production 
 var usingDevToken = true;
 login(); // Called when page loads (intent-based thing)
 function login() {
 
-  // Make an instance of the SDK with our client-specific details 
-  // (tells the client which folders we have access to) 
+  console.debug("login(): Entered function.");
+
   let login = require("./keys.js");
   var sdk = new BoxSDK({ clientID: login.CLIENT_ID, clientSecret: login.CLIENT_SECRET });
 
-  // If we're using a dev token, we don't have to go through all the rigamarole of getting an auth code 
+  // If we're using a dev token, we don't have to go through all the rigamarole of getting an auth code
   if (usingDevToken) {
     console.debug("Using a dev token.");
     let login = require("./keys.js");
@@ -75,11 +74,11 @@ function login() {
     loginPostClient(client);
   }
 
-  // We have to authenticate the user to get an auth code 
-  // (we can do a persistent client this way that automatically refreshes codes though)
+  // Otherwise, we have to go in the long way 
+  // TODO: Test this, I haven't yet 
   else {
 
-    console.debug("Going through normal oauth (no dev token).");
+    console.debug("Authenticating the long way, no dev token.");
 
     //! Have the user authenticate in via Box's workflow 
     const BrowserWindow = electron.remote.BrowserWindow;
@@ -100,74 +99,75 @@ function login() {
     authWindow.show();
 
     let currentURL = authWindow.webContents.getURL();
-    const timeout = () => {
-      setTimeout(function () {
-        currentURL = authWindow.webContents.getURL();
-        console.log("Current URL: " + currentURL);
+    var authenticationLoop = setInterval(() => {
+      
+      currentURL = authWindow.webContents.getURL();
+      if (currentURL.startsWith("https://localhost:1337")) {
+        clearInterval(authenticationLoop);
 
-        // If we've successfully authenticated and been redirected 
-        if (currentURL.startsWith("https://localhost:1337")) {
-          authWindow.close();
-          let authCode = currentURL.substring(currentURL.indexOf("=") + 1);
+        authWindow.close();
+        let authCode = currentURL.substring(currentURL.indexOf("=") + 1);
 
-          // Set up the client, then call next function 
-          sdk.getTokensAuthorizationCodeGrant(authCode, null, function (err, tokenInfo) {
-            if (err) {
-              console.log("Error exchanging auth code! err: ", err);
-            }
-
-            var TokenStore = require("./TokenStore");
-            var tokenStore = new TokenStore("test");
-            client = sdk.getPersistentClient(tokenInfo, tokenStore);
-            console.debug("Successfully got client object.");
-            loginPostClient(client);
-          });
-        }
-
-        // Otherwise, the user is still authenticating; Call again in 10ms 
-        else {
-          timeout();
-        }
-      }, 10);
-    };
-
-    // Start off the async recursion chain
-    timeout();
+        // Set up the client, then call next function 
+        sdk.getTokensAuthorizationCodeGrant(authCode, null, function (err, tokenInfo) {
+          if (err) console.log("Error exchanging auth code! err: ", err);
+          var TokenStore = require("./TokenStore"); // SDK essentially needs somewhere to store the access token stuff 
+          var tokenStore = new TokenStore("test");
+          client = sdk.getPersistentClient(tokenInfo, tokenStore); // Persistent client automatically refreshes
+          loginPostClient(client);
+        });
+      }
+    }, 10);
   }
 }
 
+/* 
+  PURPOSE: Downloads all the files we're about to bbox to the correct directory, then
+  passes control to the function that launches OpenLabeling. */ 
 async function loginPostClient() {
 
-  console.debug("Grabbing data from box raw folder id " + BOX_OUTPUT_FOLDERID);
-  console.debug("Videos were downloaded to " + OL_INPUT_FOLDER);
+  console.debug("loginPostClient(): Entered Function.");
+  console.debug("Videos are about to be downloaded from Box folder id " + BOX_OUTPUT_FOLDERID);
+  console.debug("Videos are about to be downloaded to " + OL_INPUT_FOLDER);
 
   console.debug("Clearing input directory before we download to it.");
   clearDirectory(OL_INPUT_FOLDER);
+  console.debug("Input directory cleared.");
 
   console.debug("Making client.folder.getItems API call on box raw folder");
+
+  // getItems API Call Details: https://github.com/box/box-node-sdk/blob/master/docs/folders.md#get-a-folders-items
   client.folders.getItems(BOX_INPUT_FOLDERID)
-    .then(files => {
+  .then(files => {
 
-      console.debug("Got files object: ", files);
+    console.debug("getItems call complete; Files object: ", files);
 
-      console.debug("Iterating through each file and downloading.");
-      files.entries.forEach(file => {
+    // Assigning this global variable. This is used to know when we're done downloading everything;
+    // We need to track this because I'm like 90% sure these downloads are asynchronous.
+    numVideos = files.total_count; 
+    
+    console.debug("Iterating through each file and downloading.");
+    files.entries.forEach(file => {
 
-        client.files.getReadStream(file.id, null, function (err, stream) {
+      let filesRead = 0; 
+      client.files.getReadStream(file.id, null, function (err, stream) {
 
-          if (err) console.error("File Download Error: ", err);
+        if (err) console.error("File Download Error: ", err);
 
-          console.debug("File downloaded successfully. Writing to disk.");
-          let writeStream = fs.createWriteStream(path.join(OL_INPUT_FOLDER, file.name));
-          stream.pipe(writeStream);
+        console.debug("File downloaded successfully. Writing to disk.");
+        let writeStream = fs.createWriteStream(path.join(OL_INPUT_FOLDER, file.name));
+        stream.pipe(writeStream);
 
-          writeStream.on("close", function () {
+        writeStream.on("close", function () {
+          filesRead++; 
+          if (filesRead >= numVideos) {
             getVideoNamesFromFilesObject(files);
-            launchOpenLabeling(client, videoNames);
-          });
+            launchOpenLabeling();
+          }
         });
       });
     });
+  });
 }
 
 /* 
@@ -176,8 +176,12 @@ async function loginPostClient() {
   3. Uploads a zip file with both the individual video frames and their .txt throughput 
 */
 
+/* This is an older version of uploadOutput that I don't think we need.
+  TODO: Get rid of this when done w/ everything 
 // imageNames, videoNames 
 function uploadOutput() {
+
+  console.log("uploadOutput(): Entered function.");
 
   // Iterate through all the images we need to upload and just straight upload them 
   const IMAGE_OUTPUT_DIRECTORY_ID = "107635394307"; 
@@ -217,11 +221,99 @@ function uploadOutput() {
     })
   }
 }
+*/
 
-function getFilePathsToNonEmptyFile(videoName, filledFrames) {
+/* 
+  Purpose: 
+  1. Makes a folder with the name of the video on box if one doesn't exist 
+  2. Goes into that folder 
+  3. Uploads a zip file with both the individual video frames and their .txt throughput 
+*/
+function uploadOutput() {
 
-  let videoSpecificInputDir = path.join(OL_INPUT_DIRECTORY, videoName.replace(".", "_"));
-  let videoSpecificOutputDir = path.join(OL_OUTPUT_DIRECTORY, "YOLO_darknet", videoName.replace(".", "_"));
+  // Iterate through each video's files 
+  // Note: videoNames is global, and we initialized it right before OpenLabeling opened
+  for (let i = 0; i < videoNames.length; i++) {
+
+    let filesToUpload = [];
+    let filesToUploadNames = [];
+
+    //* Get a big list of all the files in the important I/O directories 
+    let currentInputSubfolder = path.join(OL_INPUT_FOLDER, videoNames[i]);
+    let currentOutputSubfolder = path.join(OL_OUTPUT_FOLDER, videoNames[i]);
+    let inputFiles = fs.readdirSync(currentInputSubfolder);
+    let outputFiles = fs.readdirSync(currentOutputSubfolder);
+    let filledFrames = getFilledFrames(videoNames[i]); 
+    console.log("filledFrames: ", filledFrames);
+
+    // Iterate through all the frames that we actually boxed 
+    for (let j = 0; j < filledFrames.length; i++) {
+
+      let currentFrameNumber = filledFrames[j]; 
+      console.log("Currently looking at the " + currentFrameNumber + "th frame of video " + videoNames[i]);
+
+      console.log(OL_INPUT_FOLDER); 
+      console.log("videoNames[i]: " + videoNames[i]); 
+      console.log("inputFiles[currentFrame]: " + inputFiles[currentFrameNumber]); 
+    
+      filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], inputFiles[currentFrameNumber]));
+      filesToUploadNames = filesToUploadNames.concat(inputFiles[currentFrameNumber]);
+
+      filesToUpload = filesToUpload.concat(path.join(OL_OUTPUT_FOLDER, videoNames[i], outputFiles[currentFrameNumber]));
+      filesToUploadNames = filesToUploadNames.concat(outputFiles[currentFrameNumber]);
+    }
+
+    /* Different implementation that more or less does the same thing but is untested and a little less organized 
+    //* Queue the Input/Output files for the current video to be zipped 
+    // Don't have to iterate through outputFiles separately, they are both in the same range 
+    for (let j = 0; j < inputFiles.length; j++) {
+
+      // If that file isn't empty, add all its stuff to what we're zipping 
+      if (fs.statSync(path.join(OL_OUTPUT_FOLDER, videoNames[i], inputFiles[j].replace(".jpg", ".txt"))).size != 0) {
+        filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], inputFiles[j]));
+        filesToUploadNames = filesToUploadNames.concat(inputFiles[j]);
+
+        filesToUpload = filesToUpload.concat(path.join(OL_OUTPUT_FOLDER, videoNames[i], outputFiles[j]));
+        filesToUploadNames = filesToUploadNames.concat(outputFiles[j]);
+      }      
+    }
+    */
+
+    console.debug("filesToUpload: ", filesToUpload);
+    console.debug("filesToUploadNames: ", filesToUploadNames);
+
+    //* Zip everything in the array we just threw everything into 
+    // The Zip file is VideoName_StartFrame_EndFrame
+    // Not going to build in support for any non-contiguous boxing segments unless it becomes a problem...
+    // In this case, I'll probalby make it VideoName_StartFrame1_EndFrame1_StartFrame2_EndFrame2 and so on  
+    // It'll be a miracle if any of this works 
+
+    zipAndUploadFiles(filesToUpload, filesToUploadNames, videoNames[i], path.join("ZipFiles", videoNames[i] + ".zip")); 
+
+    /*
+    // Fires when the zip file is finished, presumably 
+    writeStream.on("end", function () {
+      console.log("zip file for current folder written!");
+
+      //* Start the upload to box, as the zip file has completed 
+      // (this is promise-based, so it will process the next one on disk right away while the network request processes)
+      // TODO: I've lost motivation, fix this 
+      var stream = fs.createReadStream(filesToUpload[99999999999999999]);
+      client.files.uploadFile(BOX_OUTPUT_FOLDERID, videoNames[i], stream)
+        .then(file => {
+          console.log("Finished uploading file w/ name " + file.entries.name);
+        });
+    });
+    */
+  }
+}
+
+function getFilePathsToNonEmptyFiles(videoName, filledFrames) {
+
+  console.debug("getFilePathsToNonEmptyFiles(): Entered function.");
+
+  let videoSpecificInputDir = path.join(OL_INPUT_FOLDER, videoName.replace(".", "_"));
+  let videoSpecificOutputDir = path.join(OL_OUTPUT_FOLDER, videoName.replace(".", "_"));
 
   let returnArr = []; 
 
@@ -241,9 +333,6 @@ function getFilePathsToNonEmptyFile(videoName, filledFrames) {
 
   return returnArr; 
 }
-
-// ! EVERYTHING BELOW HERE IS A HELPER FUNCTION
-// (for organizational issues) 
 
 // Zips the files in the given file array into a .zip file with the given name, then returns an array of the following form: 
 // [ZipFileName, ZipFilePath]
@@ -311,14 +400,23 @@ function zipFiles(zipName, filePathsArr) {
 
 /* TODO: I merged a LOT of functions here, a lot will probably be overlaps */ 
 
-// Returns an array of format 
-// [FirstFilledIntervalStart, FirstFilledIntervalEnd, SecondFilledIntervalStart, SecondFilledIntervalEnd, ...] 
-// given an actual video name. All the file paths are Scylla-specific, basically. 
-function getFilledFrames(videoFileName) {
+/* 
+  Returns an array of format 
 
-  var videoFolderName = videoNameToFolderName(videoFileName);
-  var folder = path.join(OL_OUTPUT_DIRECTORY, "YOLO_darknet", videoFolderName);
+  [FirstFilledIntervalStart, FirstFilledIntervalEnd, SecondFilledIntervalStart, SecondFilledIntervalEnd, ...] 
+  given an actual video name. All the file paths are Scylla-specific, basically. 
+*/
+function getFilledFrames(videoName) {
+
+  // Gets list of files in that video's output directory 
+  var folder = path.join(OL_OUTPUT_FOLDER, videoName.replace(".", "_"));
+  console.log("getFilledFrames is looking at video in location " + path.join(OL_OUTPUT_FOLDER, videoName.replace(".", "_")));
+
   var frames = fs.readdirSync(folder);
+
+  // Sorts the file names using Natural Sort, not Alphabetically 
+  // Necessary so that it'll go Video1 -> Video 2 -> Video3 -> Video 22 rather than Video1 -> Video2 -> Video22 -> Video3. We want the first.
+  frames = orderBy.orderBy(frames);
 
   // The thing we're returning, see description right above function for explanation 
   var framesArr = []; 
@@ -329,20 +427,28 @@ function getFilledFrames(videoFileName) {
   for (let i = 0; i < frames.length; i++) {
 
     currentFileContents = fs.readFileSync(path.join(folder, frames[i])); 
-
+    console.log("currentFileContents: ", currentFileContents);
+    console.log("Looking at file " + path.join(folder, frames[i]));
+    
     // If we're currently on labeled frames, we look for one that ISN'T labeled and set the end of the interval to one before this 
     if (currentlyActive) {
-      if (currentFileContents === "") {
+      if (currentFileContents.length === 0) {
+        console.log("File is empty and is the first in series to NOT be bboxed!");
         framesArr.push(i - 1); 
         currentlyActive = false; 
+      } else {
+        console.log("Current file was bboxed!");
       }
-    } 
-    
+    }
+
     // Otherwise, we're currently on unlabeled frames, we look for one that IS labeled and set the beginning of next interval to current one 
     else {
-      if (currentFileContents !== "") {
+      if (currentFileContents.length !== 0) {
+        console.log("File was bboxed and is the first in series TO be bboxed!");
         framesArr.push(i); 
         currentlyActive = true;
+      } else {
+        console.log("File is empty.");
       }
     }
   }
@@ -354,25 +460,10 @@ function getFilledFrames(videoFileName) {
   return framesArr;
 }
 
-// Does exactly what you think it does 
-function removeChildrenOfElement(element) {
-  while (element.lastElementChild) {
-      element.removeChild(element.lastElementChild);
-  }
-}
-
-function videoNameToFolderName(videoFileName) {
-  return videoFileName.replace(".", "_"); 
-}
-
-function clearInputDirectory() {
-  console.log("Deleting everything in the /input folder before we download anything.");
-  rimraf.sync(path.join("extraResources", "OpenLabeling", "main", "input", "*"));
-}
-
-function onScreenDebug(text) {
-  document.getElementById("status").textContent = text;
-  console.log(text);
+// Yeah, I didn't write this regex
+// Shamelessly ripped from https://stackoverflow.com/questions/10003683/extract-get-a-number-from-a-string/10003709
+function getNumberAtEndOfFile(file) {
+  return file.replace(/[^0-9]/g,'');
 }
 
 // Fills global variables imageNames and videoNames with the names of all the files 
@@ -421,10 +512,8 @@ function resolveBaseDir() {
   }
 }
 
-function toTXTFileExt(fileName) {
-  fileName = fileName.substring(0, fileName.indexOf(".")); 
-  console.log("Given file " + fileName + ", the .txt version is " + fileName + ".txt");
-  return fileName + ".txt";
+function fileNameToTxt(fileName) {
+  return fileName.substring(0, fileName.indexOf(".")) + ".txt";
 }
 
 function getZipName(videoName, filledFrames) {
@@ -445,70 +534,6 @@ function getZipName(videoName, filledFrames) {
 
   console.log("Given videoName " + videoName + " and filledFrames", filledFrames, "zip name is " + endString);
   return endString; 
-/* 
-  1. Makes a folder with the name of the video on box if one doesn't exist 
-  2. Goes into that folder 
-  3. Uploads a zip file with both the individual video frames and their .txt throughput 
-*/
-function uploadOutput(client) {
-
-  // Need to put complete file paths in here 
-  // Go into OL_YOLO_OUTPUT_FOLDER and use everything in there (should be all .txt files) 
-  // Go into OL_INPUT_VIDEO_FOLDERS and use everything in there (should be all the corresponding .jpg files) 
-  // TODO: Make all these requests actually asynchronous, shouldn't be necessary unless there's a noticeable delay here. There really shouldn't be a relevant delay, fs operations are hella quick 
-
-  // Add all the files from the input folders 
-  for (let i = 0; i < videoNames.length; i++) {
-
-    let filesToUpload = [];
-    let filesToUploadNames = [];
-
-    //* Get a big list of all the files in the important I/O directories 
-    let currentInputSubfolder = path.join(OL_INPUT_FOLDER, videoNames[i]);
-    let currentOutputSubfolder = path.join(OL_OUTPUT_FOLDER, videoNames[i]);
-    let inputFiles = fs.readdirSync(currentInputSubfolder);
-    let outputFiles = fs.readdirSync(currentOutputSubfolder);
-
-    //* Queue the Input/Output files for the current video to be zipped 
-    for (let j = 0; j < inputFiles.length; j++) {
-
-      // If that file isn't empty, add all its stuff to what we're zipping 
-      if (fs.statSync(path.join(OL_OUTPUT_FOLDER, videoNames[i], inputFiles[j].replace(".jpg", ".txt"))).size != 0) {
-        filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], inputFiles[j]));
-        filesToUploadNames = filesToUploadNames.concat(inputFiles[j]);
-
-        filesToUpload = filesToUpload.concat(path.join(OL_OUTPUT_FOLDER, videoNames[i], outputFiles[j]));
-        filesToUploadNames = filesToUploadNames.concat(outputFiles[j]);
-      }      
-    }
-
-    console.debug("filesToUpload: ", filesToUpload);
-    console.debug("filesToUploadNames: ", filesToUploadNames);
-
-    //* Zip everything in the array we just threw everything into 
-    // The Zip file is VideoName_StartFrame_EndFrame
-    // Not going to build in support for any non-contiguous boxing segments unless it becomes a problem...
-    // In this case, I'll probalby make it VideoName_StartFrame1_EndFrame1_StartFrame2_EndFrame2 and so on  
-    // It'll be a miracle if any of this works 
-
-    zipAndUploadFiles(filesToUpload, filesToUploadNames, videoNames[i], path.join("ZipFiles", videoNames[i] + ".zip")); 
-
-    /*
-    // Fires when the zip file is finished, presumably 
-    writeStream.on("end", function () {
-      console.log("zip file for current folder written!");
-
-      //* Start the upload to box, as the zip file has completed 
-      // (this is promise-based, so it will process the next one on disk right away while the network request processes)
-      // TODO: I've lost motivation, fix this 
-      var stream = fs.createReadStream(filesToUpload[99999999999999999]);
-      client.files.uploadFile(BOX_OUTPUT_FOLDERID, videoNames[i], stream)
-        .then(file => {
-          console.log("Finished uploading file w/ name " + file.entries.name);
-        });
-    });
-    */
-  }
 }
 
 function zipAndUploadFiles(filesToUpload, filesToUploadNames, videoName, zipPath) {
@@ -562,17 +587,6 @@ function getVideoNamesFromFilesObject(files) {
 async function removeChildrenOfElement(element) {
   while (element.lastElementChild) {
     element.removeChild(element.lastElementChild);
-  }
-}
-
-// This function returns a path to our base directory, sensing whether we're in development or distribution
-function resolveBaseDir() {
-  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
-    console.log("We are in the development environment!");
-    return __dirname;
-  } else {
-    console.log("We are in the distribution environment!");
-    return path.join(process.resourcesPath);
   }
 }
 
