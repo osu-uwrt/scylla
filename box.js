@@ -241,43 +241,34 @@ function uploadOutput() {
     //* Get a big list of all the files in the important I/O directories 
     let currentInputSubfolder = path.join(OL_INPUT_FOLDER, videoNames[i]);
     let currentOutputSubfolder = path.join(OL_OUTPUT_FOLDER, videoNames[i]);
-    let inputFiles = fs.readdirSync(currentInputSubfolder);
-    let outputFiles = fs.readdirSync(currentOutputSubfolder);
+    let inputFiles = orderBy.orderBy(fs.readdirSync(currentInputSubfolder));
+    let outputFiles = orderBy.orderBy(fs.readdirSync(currentOutputSubfolder));
     let filledFrames = getFilledFrames(videoNames[i]); 
     console.log("filledFrames: ", filledFrames);
 
-    // Iterate through all the frames that we actually boxed 
-    for (let j = 0; j < filledFrames.length; i++) {
+    // Go through this twice at a time until we get through all the filled frames
+    let currentStart, currentEnd; 
+    while (filledFrames.length > 0) {
 
-      let currentFrameNumber = filledFrames[j]; 
-      console.log("Currently looking at the " + currentFrameNumber + "th frame of video " + videoNames[i]);
+      currentStart = filledFrames[0]; 
+      currentEnd = filledFrames[1]; 
 
-      console.log(OL_INPUT_FOLDER); 
-      console.log("videoNames[i]: " + videoNames[i]); 
-      console.log("inputFiles[currentFrame]: " + inputFiles[currentFrameNumber]); 
-    
-      filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], inputFiles[currentFrameNumber]));
-      filesToUploadNames = filesToUploadNames.concat(inputFiles[currentFrameNumber]);
+      // Loop through the actual frames [start, end] from the original video 
+      for (let currentFrameNumber = currentStart; currentFrameNumber <= currentEnd; currentFrameNumber++) {
 
-      filesToUpload = filesToUpload.concat(path.join(OL_OUTPUT_FOLDER, videoNames[i], outputFiles[currentFrameNumber]));
-      filesToUploadNames = filesToUploadNames.concat(outputFiles[currentFrameNumber]);
+        console.log("Adding frame " + currentFrameNumber + " to filesToUpload and filesToUploadNames"); 
+
+        filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], inputFiles[currentFrameNumber]));
+        filesToUploadNames = filesToUploadNames.concat(inputFiles[currentFrameNumber]);
+
+        filesToUpload = filesToUpload.concat(path.join(OL_OUTPUT_FOLDER, videoNames[i], outputFiles[currentFrameNumber]));
+        filesToUploadNames = filesToUploadNames.concat(outputFiles[currentFrameNumber]);
+      }
+
+      // Slice off the first two frames, because we just added both of those 
+      // array.splice(index to remove at, # of elements to remove)
+      filledFrames.splice(0, 2); 
     }
-
-    /* Different implementation that more or less does the same thing but is untested and a little less organized 
-    //* Queue the Input/Output files for the current video to be zipped 
-    // Don't have to iterate through outputFiles separately, they are both in the same range 
-    for (let j = 0; j < inputFiles.length; j++) {
-
-      // If that file isn't empty, add all its stuff to what we're zipping 
-      if (fs.statSync(path.join(OL_OUTPUT_FOLDER, videoNames[i], inputFiles[j].replace(".jpg", ".txt"))).size != 0) {
-        filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoNames[i], inputFiles[j]));
-        filesToUploadNames = filesToUploadNames.concat(inputFiles[j]);
-
-        filesToUpload = filesToUpload.concat(path.join(OL_OUTPUT_FOLDER, videoNames[i], outputFiles[j]));
-        filesToUploadNames = filesToUploadNames.concat(outputFiles[j]);
-      }      
-    }
-    */
 
     console.debug("filesToUpload: ", filesToUpload);
     console.debug("filesToUploadNames: ", filesToUploadNames);
@@ -290,6 +281,7 @@ function uploadOutput() {
 
     zipAndUploadFiles(filesToUpload, filesToUploadNames, videoNames[i], path.join("ZipFiles", videoNames[i] + ".zip")); 
 
+    // Actually upload everything we just did 
     /*
     // Fires when the zip file is finished, presumably 
     writeStream.on("end", function () {
