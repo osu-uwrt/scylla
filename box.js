@@ -241,9 +241,20 @@ function uploadOutput() {
     //* Get a big list of all the files in the important I/O directories 
     let currentInputSubfolder = path.join(OL_INPUT_FOLDER, videoNames[i]);
     let currentOutputSubfolder = path.join(OL_OUTPUT_FOLDER, videoNames[i]);
+
+    // Have to run these through Human Sorting so that they don't 5
     let inputFiles = orderBy.orderBy(fs.readdirSync(currentInputSubfolder));
     let outputFiles = orderBy.orderBy(fs.readdirSync(currentOutputSubfolder));
     let filledFrames = getFilledFrames(videoNames[i]); 
+
+    // Because we essentially chop off filledFrames in practice, and we need to do it after, we put the values in another array too
+    // Need to do a deep copy here b/c arrays are reference values and if we just use = it'll just alias to the same memory 
+    let filledFramesBackup = []; 
+    for (let j = 0; j < filledFrames.length; j++) {
+      filledFramesBackup[j] = filledFrames[j]; 
+    }
+    console.log("filledFramesBackup: ", filledFramesBackup);
+
     console.log("filledFrames: ", filledFrames);
 
     // Go through this twice at a time until we get through all the filled frames
@@ -279,24 +290,7 @@ function uploadOutput() {
     // In this case, I'll probalby make it VideoName_StartFrame1_EndFrame1_StartFrame2_EndFrame2 and so on  
     // It'll be a miracle if any of this works 
 
-    zipAndUploadFiles(filesToUpload, filesToUploadNames, videoNames[i], path.join("ZipFiles", videoNames[i] + ".zip")); 
-
-    // Actually upload everything we just did 
-    /*
-    // Fires when the zip file is finished, presumably 
-    writeStream.on("end", function () {
-      console.log("zip file for current folder written!");
-
-      //* Start the upload to box, as the zip file has completed 
-      // (this is promise-based, so it will process the next one on disk right away while the network request processes)
-      // TODO: I've lost motivation, fix this 
-      var stream = fs.createReadStream(filesToUpload[99999999999999999]);
-      client.files.uploadFile(BOX_OUTPUT_FOLDERID, videoNames[i], stream)
-        .then(file => {
-          console.log("Finished uploading file w/ name " + file.entries.name);
-        });
-    });
-    */
+    zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFramesBackup, videoNames[i], "ZipFiles"); 
   }
 }
 
@@ -528,9 +522,24 @@ function getZipName(videoName, filledFrames) {
   return endString; 
 }
 
-function zipAndUploadFiles(filesToUpload, filesToUploadNames, videoName, zipPath) {
-  var output = fs.createWriteStream(path.join(zipPath));
-  var archive = archiver("zip", { zlib: { level: 9 } } ); 
+function zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames, videoName, zipPath) {
+
+  console.log("videoName: " + videoName);
+  console.log("zipPath: " + zipPath);
+  console.log("filledFrames: ", filledFrames); 
+
+  // Essentially constructing the end name of the zip file from the filledFrames array
+  // Need to name it this way so we can look at Box w/o downloading anything and figure out exactly what still needs boxed 
+  var endZipName = path.join(zipPath, videoName); 
+  for (let i = 0; i < filledFrames.length; i++) {
+    endZipName += "_"; 
+    endZipName += filledFrames[i]; 
+  }
+  endZipName += ".zip"; 
+
+  console.log("Name of Zip We're Uploading: " + endZipName);
+  var output = fs.createWriteStream(endZipName);
+  var archive = archiver("zip", { zlib: { level: 9 } } );
 
   output.on("close", function() {
     console.log(archive.pointer() + " total bytes"); 
@@ -552,9 +561,17 @@ function zipAndUploadFiles(filesToUpload, filesToUploadNames, videoName, zipPath
   archive.finalize();
 
   // Only clear the output directory after I make the .zip file
-  // clearDirectory(path.join(OL_OUTPUT_FOLDER, videoName));
+  // TODO: Should probably move the "clear my output directory" to when we initially open OpenLabeling, or make it when we initially open the directory 
+  clearDirectory(path.join(OL_OUTPUT_FOLDER, videoName));
 
-  // Upload the file 
+  // TODO: This just uploads everything we do here to a single folder, even if we just bboxed individual files. Have this automatically make folders for each video, putting the .zip in the correct folder. 
+  // Actually upload the .zip file we just made
+  console.log(endZipName);
+  var stream = fs.createReadStream(endZipName);
+  client.files.uploadFile(BOX_OUTPUT_FOLDERID, endZipName, stream)
+    .then(file => {
+      console.log("Finished uploading file w/ name " + file.entries.name);
+    });
 }
 
 // Updates the front-end display based on the files object returned from client.folder.get("FOLDER_ID") on https://github.com/box/box-node-sdk/blob/master/docs/folders.md

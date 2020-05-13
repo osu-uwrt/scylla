@@ -37,6 +37,14 @@ After executing the setup script above, all you need to do is navigate to the ba
 
 ## Other Notes 
 
+### TODO 
+
+- Implement some way to traverse the Box file tree, download files, and "enable them" as things we're boxing 
+  - Because of how we name the zip files, it should point out in some way which files we still need to box. Do NOT do this until the basic traversal is done. This is an optimization thing. 
+- Instead of uploading all the .zip files to a single directory, have the app create folders for each video and put the .zip files in the correct directory 
+- (Other priorities right now) Make a button that traverses our entire output directory on Box and gets rid of redundancies, minimizing the number of .zip files we have to deal with 
+  - Hell, this might even be good to incorporate to our upload procedure. Easier in the meantime to just parse in that directory though. Getting ahead of ourselves regardless.
+
 ### Workflow
 
 #### Files From Box 
