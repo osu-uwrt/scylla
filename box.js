@@ -190,6 +190,11 @@ function displayResultsOfNetworkRequest(items) {
     let currentChild = document.createElement("li");
     currentChild.textContent = items.entries[i].name; 
     baseOfTree.appendChild(currentChild);
+
+    // document.getElementById("id")
+    // element.appendChild 
+    // element.textContent 
+    // querySelectorAll
   }
 }
 
