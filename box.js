@@ -137,9 +137,14 @@ async function loginPostClient() {
   console.debug("Input directory cleared.");
 
   // console.debug("Making client.folder.getItems API call on box raw folder");
+  client.folders.getItems("1564551695")
+  .then(items => {
+    console.log("items: ", items); 
+    displayResultsOfNetworkRequest(items);    
+  });
 
   // Testing with several arbitrary video files from Box 
-  postExplorer(["607640898018", "487069577508"]);
+  // cpostExplorer(["607640898018", "487069577508"]);
 
   /* This code essentially downloads everything in the directory on Box. We do this differently in postExplorer() now. Just saved this b/c we may need it again. 
   // getItems API Call Details: https://github.com/box/box-node-sdk/blob/master/docs/folders.md#get-a-folders-items
@@ -175,6 +180,17 @@ async function loginPostClient() {
     });
   });
   */
+}
+
+function displayResultsOfNetworkRequest(items) {
+  for (let i = 0; i < items.entries.length; i++) {
+    let baseOfTree = document.getElementById("baseOfMyTree");
+    // baseOfTree.textContent = "hello!";
+
+    let currentChild = document.createElement("li");
+    currentChild.textContent = items.entries[i].name; 
+    baseOfTree.appendChild(currentChild);
+  }
 }
 
 /* Takes in an array of Box File IDs, downloads them, lets the user Box them, then uploads them to Box. 
