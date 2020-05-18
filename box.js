@@ -20,7 +20,7 @@ const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "inp
 const OL_OUTPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "output", "YOLO_darknet");
 const BOX_INPUT_FOLDERID = "88879798045";
 const BOX_OUTPUT_FOLDERID = "105343099285"; 
-var videoNames; // Array of strings of each video name 
+var videoNames = []; // Array of strings of each video name 
 var numVideos; // Integer tracking how many videos we are processing. 
 
 /* 
@@ -126,6 +126,8 @@ function login() {
   passes control to the function that launches OpenLabeling. */ 
 async function loginPostClient() {
 
+
+
   console.debug("loginPostClient(): Entered Function.");
   console.debug("Videos are about to be downloaded from Box folder id " + BOX_OUTPUT_FOLDERID);
   console.debug("Videos are about to be downloaded to " + OL_INPUT_FOLDER);
@@ -134,8 +136,12 @@ async function loginPostClient() {
   clearDirectory(OL_INPUT_FOLDER);
   console.debug("Input directory cleared.");
 
-  console.debug("Making client.folder.getItems API call on box raw folder");
+  // console.debug("Making client.folder.getItems API call on box raw folder");
 
+  // Testing with several arbitrary video files from Box 
+  postExplorer(["607640898018", "487069577508"]);
+
+  /* This code essentially downloads everything in the directory on Box. We do this differently in postExplorer() now. Just saved this b/c we may need it again. 
   // getItems API Call Details: https://github.com/box/box-node-sdk/blob/master/docs/folders.md#get-a-folders-items
   client.folders.getItems(BOX_INPUT_FOLDERID)
   .then(files => {
@@ -168,6 +174,55 @@ async function loginPostClient() {
       });
     });
   });
+  */
+}
+
+/* Takes in an array of Box File IDs, downloads them, lets the user Box them, then uploads them to Box. 
+    Clark, if you're reading this, you'll just call this function once after you get the files that the user should Box; 
+    This will take care of the rest. Doesn't return anything. */ 
+function postExplorer(downloadIDs) {
+
+  let numFilesDownloaded = 0; // Number of files that network requests have completed. 
+
+  console.debug("downloadIDs: " + downloadIDs); 
+
+  // Iterate through each ID that we have to download 
+  for (let i = 0; i < downloadIDs.length; i++) {
+
+    // Get information about the file so we know what to name it
+    client.files.get(downloadIDs[i])
+    .then (file => {
+
+      console.debug("Downloading file named " + file.name);
+
+      // Then actually download the file 
+      client.files.getReadStream(downloadIDs[i], null, function(err, stream) {
+
+        // If there was an error downloading, complain about it 
+        if (err) {
+          console.error("Error downloading file with id " + downloadIDs[i]); 
+          console.error("Please restart the app. This is likely because of an issue w/ Box itself, or your internet connection failed.");
+        } 
+  
+        // Write the file to OpenLabeling's input directory
+        var output = fs.createWriteStream(path.join(OL_INPUT_FOLDER, file.name)); 
+        stream.pipe(output);
+
+        // If we fire the "end" event, we know that the file fully downloaded
+        stream.on("end", () => {
+          console.debug("Finished downloading file named " + file.name + " to location " + OL_INPUT_FOLDER);
+          videoNames.push(file.name.replace(".", "_"));
+          numFilesDownloaded++;
+
+          // Because JS is asynchronous and will do the network requests for these files at the same time, this is how we have to 
+          // make sure that we downloaded everything before we actually launch OpenLabeling 
+          if (numFilesDownloaded >= downloadIDs.length) {
+            launchOpenLabeling();
+          }
+        });
+      });
+    });
+  } 
 }
 
 /* 
