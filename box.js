@@ -22,6 +22,7 @@ const BOX_INPUT_FOLDERID = "88879798045";
 const BOX_OUTPUT_FOLDERID = "105343099285"; 
 var videoNames = []; // Array of strings of each video name 
 var numVideos; // Integer tracking how many videos we are processing. 
+var fileIDsToBox = [] //Array of fileIDs created by the user that need to be boxed
 
 /* 
   PURPOSE: Figures out where OpenLabeling is and launches it. 
@@ -137,7 +138,8 @@ async function loginPostClient() {
   console.debug("Input directory cleared.");
 
   // console.debug("Making client.folder.getItems API call on box raw folder");
-  client.folders.getItems("1564551695")
+  //this creates the directory that can be navigated there will have to be two buttons one to add this to the array and one to move further in to a folder
+  client.folders.getItems("29024524811")
   .then(items => {
     console.log("items: ", items); 
     displayResultsOfNetworkRequest(items);    
@@ -184,18 +186,52 @@ async function loginPostClient() {
 
 function displayResultsOfNetworkRequest(items) {
   for (let i = 0; i < items.entries.length; i++) {
+    
     let baseOfTree = document.getElementById("baseOfMyTree");
-    // baseOfTree.textContent = "hello!";
-
+    let buttonElement = document.createElement("button");
     let currentChild = document.createElement("li");
     currentChild.textContent = items.entries[i].name; 
     baseOfTree.appendChild(currentChild);
+    //localeCompare returns 0 for equal to
+    if (!items.entries[i].type.localeCompare("folder")){
+      buttonElement.textContent = ("Click to Open");
+      //add the on click funtionality
+      client.folders.getItems(items.entries[i].id)
+      .then(items2 => {
+        buttonElement.onclick = function(){displayResultsOfNetworkRequest(items2)};    
+    });
+    }
+    else{
+      buttonElement.textContent = ("Add to be Boxed");
+      //add the on click functionality
+      buttonElement.onclick = function() {toBoxAddOrRemove(buttonElement,items.entries[i])};
+      buttonElement.style.color = "red";
+    }
+    baseOfTree.appendChild(buttonElement);
 
     // document.getElementById("id")
     // element.appendChild 
     // element.textContent 
     // querySelectorAll
   }
+}
+
+/**
+ * Adds an element to the array fileIDsToBox if the element is not already in the array or removes it otherwise indicating with button color
+ * red for not added
+ * green for added
+ */
+function toBoxAddOrRemove(button,item){
+  if(fileIDsToBox.includes(item.id)){
+    fileIDsToBox.splice(fileIDsToBox.indexOf(item.id),1);
+    button.style.color = "red";
+    console.debug("We removed :",item.id, "from the array");
+  }else{
+    fileIDsToBox.push(item.id);
+    button.style.color = "green";
+    console.debug("We added to the array :",item.id);
+  }
+  
 }
 
 /* Takes in an array of Box File IDs, downloads them, lets the user Box them, then uploads them to Box. 

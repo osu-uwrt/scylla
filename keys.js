@@ -2,8 +2,8 @@
 // If you aren't using a dev token (like in a finished app), you can just use mine. It's only used by Box to keep
 // performance metrics and to figure out who's using all their bandwidth.
 module.exports = {
-    CLIENT_ID: "kzxvcftcf0c0ke3ypaifv0dqd7spzy69", 
-    CLIENT_SECRET: "d1Pl9cZORTgCUwqx3G45CXbWN5H6pzca", 
-    DEV_TOKEN: "VREWWhfGSjXHnjiHUeZc1I0W8hC5vMYx"
+    CLIENT_ID: "w0guuhcc2msyg65ocmf95oibozyouu9z", 
+    CLIENT_SECRET: "hwUOR36zfMZN5xDvNkrYV5faXGX98dmT", 
+    DEV_TOKEN: "8GVnAjNhORl1zX7FovCfH5tPF9Fu0f2z"
 }
 
