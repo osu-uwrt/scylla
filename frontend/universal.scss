@@ -6,10 +6,26 @@ body {
     height: 100vh;
 
     font-family: "Lato", sans-serif;
+    box-sizing: border-box;
+
     background-color: #363636;
     color: white;
 
-    box-sizing: border-box;
+    overflow: hidden !important;
+}
+
+#navbar {
+    display: inline-block;
+    width: 350px;
+    height: 100%;
+}
+
+#rightContainer {
+    display: inline-block;
+    position: absolute;
+    left: 350px;
+    width: calc(100% - 350px);
+    height: 100%;
 }
 
 #navbar {
@@ -23,34 +39,41 @@ body {
     height: 100%;
 
     text-align: left;
+    border-right: 1px black solid;
+    z-index: 2;
 
-    #branding {
+    > #branding {
 
-        height: 100px;
+        position: relative; 
+        width: 100%;
+        height: 70px;
 
-        > div, > img {
-            display: inline-block;
-            vertical-align: top;
-        }
-        
-        > div {
-            line-height: 100px;
-            width: calc(100% - 100px);
-            height: 100px;
-        }
-
+        /* The absolute positioning here isn't really the "best" way to do this... 
+            but it doesn't really matter; Anything that would normally mess up has 
+            hardcoded pixel values so it doesn't really affect that */
         > img {
-            width: 69.5px;
-            padding: 12.5px;
+            width: 70px;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+        }
 
-            // 73.2333 is a hardcoded number for the logo's height when it's 
-            margin-top: calc(calc(100px - 73.2333px) / 2); 
+        > h1 {
+            font-size: 30px;
+            position: absolute;
+            width: calc(100% - 70px);
+            left: 10px;
+            width: fit-content;
+            line-height: 70px;
+            margin-top: 0; 
+            margin-bottom: 0;
         }
     }
 
     > ul {
         
         padding-left: 0;
+        margin: 0;
 
         > li {
 
@@ -62,12 +85,14 @@ body {
             width: 350px;
             height: 50px;
 
+            border-top: 1px black solid;
+
             > a {
 
                 display: block;
-                padding-left: 40px;
+                padding-left: 10px;
 
-                width: calc(100% - 40px);
+                width: calc(100% - 10px);
                 height: 100%;
 
                 color: white; 
@@ -83,25 +108,41 @@ body {
                 background-color: #DD0000; 
             }
         }
+
+        > li:last-of-type {
+            border-bottom: 1px black solid;
+        }
     }
 
-    #processInformation {
+    > #processInformation {
         position: absolute;
         left: 10px;
-        bottom: 10px;
-        a {
+        bottom: 60px;
+        > div > a {
             color: white;
         }
     }
+
+    > #status {
+
+        // Positioning 
+        position: absolute; 
+        bottom: 0;
+        left: 0;
+        text-align: center;
+
+        // Sizing 
+        width: 100%;
+        height: 50px; 
+        line-height: 50px;
+
+        // Coloring 
+        background-color: #7C0000; 
+        color: white;
+
+        // Font 
+        font-size: 14px;
+        font-family: "Lato", sans-serif;
+    }
 }
 
-#navbar, #rightContainer {
-    display: inline-block;
-}
-
-#rightContainer {
-    position: absolute; 
-    left: 300px;
-    top: 0;
-    width: calc(100% - 350px);
-}

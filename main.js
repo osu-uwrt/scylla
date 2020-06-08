@@ -1,5 +1,8 @@
 // Imports 
 const { app, BrowserWindow } = require('electron');
+require("electron-reload")(__dirname, {
+  electron: require(`${__dirname}/node_modules/electron`)
+});
 
 //* Useful Links: 
 // Python-Shell Documentation: https://github.com/extrabacon/python-shell

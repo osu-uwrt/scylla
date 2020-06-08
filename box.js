@@ -15,10 +15,13 @@ const path = require("path");
 var spawn = require("child_process").spawn;
 var fs = require("fs");
 
+// Other custom JS files that we want code from 
+var BoxingQueue = require("./BoxingQueue");
+
 //* Global Variables (otherwise we'd pass them around EVERYWHERE)
 const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
 const OL_OUTPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "output", "YOLO_darknet");
-const BOX_INPUT_FOLDERID = "88879798045";
+const BOX_BASE_FOLDERID = "29024524811";
 const BOX_OUTPUT_FOLDERID = "105343099285"; 
 var videoNames = []; // Array of strings of each video name 
 var numVideos; // Integer tracking how many videos we are processing. 
@@ -53,33 +56,35 @@ function launchOpenLabeling() {
     uploadOutput();
   });
 }
+
+function updateStatus(statusMessage) {
+  document.getElementById("status").textContent = "Status: " + statusMessage;
+}
  
 // Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
 /* PURPOSE: Goes through all the authentication stuff and gets us a fully authenticated client object that we can use to actually make requests */
 // TODO: Set this to false when actually building for production 
 var usingDevToken = true;
-login(); // Called when page loads (intent-based thing)
+login(); // Called when page loads
 function login() {
 
-  console.debug("login(): Entered function.");
+  updateStatus("Authenticating with Box.");
 
   let login = require("./keys.js");
   var sdk = new BoxSDK({ clientID: login.CLIENT_ID, clientSecret: login.CLIENT_SECRET });
 
   // If we're using a dev token, we don't have to go through all the rigamarole of getting an auth code
   if (usingDevToken) {
-    console.debug("Using a dev token.");
+    console.debug("Authenticating with a dev token.");
     let login = require("./keys.js");
     client = sdk.getBasicClient(login.DEV_TOKEN);
-    console.debug("Successfully got client object.");
     loginPostClient(client);
   }
 
-  // Otherwise, we have to go in the long way 
-  // TODO: Test this, I haven't yet 
+  // Otherwise, we have to go in the long way
   else {
 
-    console.debug("Authenticating the long way, no dev token.");
+    console.debug("Authenticating without dev token.");
 
     //! Have the user authenticate in via Box's workflow 
     const BrowserWindow = electron.remote.BrowserWindow;
@@ -114,7 +119,7 @@ function login() {
           if (err) console.log("Error exchanging auth code! err: ", err);
           var TokenStore = require("./TokenStore"); // SDK essentially needs somewhere to store the access token stuff 
           var tokenStore = new TokenStore("test");
-          client = sdk.getPersistentClient(tokenInfo, tokenStore); // Persistent client automatically refreshes
+          client = sdk.getPersistentClient(tokenInfo, tokenStore); // Persistent client automatically refreshes; Only possible w/ no dev token
           loginPostClient(client);
         });
       }
@@ -127,11 +132,7 @@ function login() {
   passes control to the function that launches OpenLabeling. */ 
 async function loginPostClient() {
 
-
-
-  console.debug("loginPostClient(): Entered Function.");
-  console.debug("Videos are about to be downloaded from Box folder id " + BOX_OUTPUT_FOLDERID);
-  console.debug("Videos are about to be downloaded to " + OL_INPUT_FOLDER);
+  updateStatus("Authenticated. Waiting for user file selection.")
 
   console.debug("Clearing input directory before we download to it.");
   clearDirectory(OL_INPUT_FOLDER);
@@ -139,7 +140,7 @@ async function loginPostClient() {
 
   // console.debug("Making client.folder.getItems API call on box raw folder");
   //this creates the directory that can be navigated there will have to be two buttons one to add this to the array and one to move further in to a folder
-  client.folders.getItems("29024524811")
+  client.folders.getItems(BOX_BASE_FOLDERID)
   .then(items => {
     console.log("items: ", items); 
     displayResultsOfNetworkRequest(items);    
@@ -150,7 +151,7 @@ async function loginPostClient() {
 
   /* This code essentially downloads everything in the directory on Box. We do this differently in postExplorer() now. Just saved this b/c we may need it again. 
   // getItems API Call Details: https://github.com/box/box-node-sdk/blob/master/docs/folders.md#get-a-folders-items
-  client.folders.getItems(BOX_INPUT_FOLDERID)
+  client.folders.getItems(BOX_BASE_FOLDERID)
   .then(files => {
 
     console.debug("getItems call complete; Files object: ", files);
@@ -185,29 +186,59 @@ async function loginPostClient() {
 }
 
 function displayResultsOfNetworkRequest(items) {
+
+  console.log("Displaying following object: ", items);
+
+  // Get reference to base and get rid of last folder we rendered
+  let baseOfTree = document.getElementById("baseOfMyTree");
+  while (baseOfTree.lastChild) { baseOfTree.removeChild(baseOfTree.lastChild); }
+
+  // Iterate through each file and display it
   for (let i = 0; i < items.entries.length; i++) {
-    
-    let baseOfTree = document.getElementById("baseOfMyTree");
-    let buttonElement = document.createElement("button");
-    let currentChild = document.createElement("li");
-    currentChild.textContent = items.entries[i].name; 
-    baseOfTree.appendChild(currentChild);
-    //localeCompare returns 0 for equal to
-    if (!items.entries[i].type.localeCompare("folder")){
-      buttonElement.textContent = ("Click to Open");
-      //add the on click funtionality
+
+    let boxItemEnableButton = document.createElement("div");
+    boxItemEnableButton.classList.toggle("boxItemEnableButton");
+
+    let boxItemText = document.createElement("div");
+    boxItemText.classList.toggle("boxItemText");
+    boxItemText.textContent = items.entries[i].name; 
+
+    let boxItem = document.createElement("li");
+    boxItem.appendChild(boxItemEnableButton);
+    boxItem.appendChild(boxItemText);
+
+    // If it's a folder
+    if (items.entries[i].type === "folder") {
+
+      // If it's a folder, we add an onclick to it that will perform the next network request
       client.folders.getItems(items.entries[i].id)
       .then(items2 => {
-        buttonElement.onclick = function(){displayResultsOfNetworkRequest(items2)};    
-    });
+        boxItem.onclick = function(){
+          updateStatus("Waiting for user input.");
+          displayResultsOfNetworkRequest(items2)
+        };    
+      });
+
+      updateStatus("Fetching directory contents.");
     }
-    else{
-      buttonElement.textContent = ("Add to be Boxed");
-      //add the on click functionality
-      buttonElement.onclick = function() {toBoxAddOrRemove(buttonElement,items.entries[i])};
-      buttonElement.style.color = "red";
+
+    // Otherwise, it's a viable file to bbox 
+    else {
+
+      // If it's currently already in the queue, we render the button as green 
+      boxItem.firstChild.classList.toggle("selectedToBox");
+
+      // It's a viable file to bbox, so we give it an onclick 
+      boxItem.onclick = function() {
+
+        BoxingQueue.processNewItem(items.entries[i].name, items.entries[i].id);
+
+        // Make the button green 
+        boxItem.firstChild.classList.toggle("selectedToBox");
+      }
     }
-    baseOfTree.appendChild(buttonElement);
+
+    baseOfTree.appendChild(boxItem);
 
     // document.getElementById("id")
     // element.appendChild 
@@ -221,7 +252,7 @@ function displayResultsOfNetworkRequest(items) {
  * red for not added
  * green for added
  */
-function toBoxAddOrRemove(button,item){
+function toBoxAddOrRemove(button, item){
   if(fileIDsToBox.includes(item.id)){
     fileIDsToBox.splice(fileIDsToBox.indexOf(item.id),1);
     button.style.color = "red";
@@ -286,53 +317,6 @@ function postExplorer(downloadIDs) {
   1. Makes a folder with the name of the video on box if one doesn't exist 
   2. Goes into that folder 
   3. Uploads a zip file with both the individual video frames and their .txt throughput 
-*/
-
-/* This is an older version of uploadOutput that I don't think we need.
-  TODO: Get rid of this when done w/ everything 
-// imageNames, videoNames 
-function uploadOutput() {
-
-  console.log("uploadOutput(): Entered function.");
-
-  // Iterate through all the images we need to upload and just straight upload them 
-  const IMAGE_OUTPUT_DIRECTORY_ID = "107635394307"; 
-  var outputImagePath, inputImagePath;
-  for (let i = 0; i < imageNames.length; i++) {
-
-    inputImagePath = path.join(OL_INPUT_DIRECTORY, imageNames[i]); 
-    outputImagePath = path.join(OL_OUTPUT_DIRECTORY, imageNames[i]); 
-
-    // TODO: Figure out if the fact that these are asynchronous calls will screw with stuff... There's probably a way to quit the application as soon as all the callbacks are done like adding to a value every time, but I don't have the will to look it up right now 
-    // Upload input image
-    var inputImageReadStream = fs.createReadStream(inputImagePath); 
-    client.files.uploadFile(IMAGE_OUTPUT_DIRECTORY_ID, imageNames[i], inputImageReadStream); 
-
-    // Upload output image 
-    var outputImageReadStream = fs.createReadStream(outputImagePath); 
-    client.files.uploadFile(IMAGE_OUTPUT_DIRECTORY_ID, toTXTFileExt(imageNames[i]), outputImageReadStream);
-  }
-
-  // Iterate through each video name, finding the frames that were labeled, then zip both the .jpg and .txt for each of those files  
-  const OUTPUT_DIRECTORY_ID = "105343099285"; 
-  for (let i = 0; i < videoNames.length; i++) {
-    let filledFrames = getFilledFrames(videoNames[i]);
-    let zipName = getZipName(videoNames[i], filledFrames);  
-
-    // Returns an actual array with file paths to the non-empty files we need to grab 
-    let nonEmptyFilePaths = getFilePathsToNonEmptyFile(videoNames[i], filledFrames);
-
-    // Actually zip all the files together 
-    zipFiles(zipName, nonEmptyFilePaths);
-
-    // Start the upload of that .zip file to Box 
-    let readStream = fs.createReadStream(path.join(OL_OUTPUT_DIRECTORY, zipName));  
-    client.files.uploadFile(OUTPUT_DIRECTORY_ID, zipName, readStream)
-    .then(file => {
-      console.log("Finished upload of .zip file named " + file.entries[0].name); 
-    })
-  }
-}
 */
 
 /* 
@@ -558,12 +542,6 @@ function getFilledFrames(videoName) {
   return framesArr;
 }
 
-// Yeah, I didn't write this regex
-// Shamelessly ripped from https://stackoverflow.com/questions/10003683/extract-get-a-number-from-a-string/10003709
-function getNumberAtEndOfFile(file) {
-  return file.replace(/[^0-9]/g,'');
-}
-
 // Fills global variables imageNames and videoNames with the names of all the files 
 function getVideoImageNames() {
     
@@ -600,6 +578,7 @@ function getFileType(fileName) {
 }
 
 // This function returns a path to our base directory, sensing whether we're in development or distribution
+// This is necessary for stuff to work properly when we're in a built version of the app, rather than just `yarn start` (development version)
 function resolveBaseDir() {
   if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
     console.log("We are in the development environment!");

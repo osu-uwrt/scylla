@@ -2,6 +2,8 @@
   width: 100%;
   height: 100%;
   text-align: center;
+  position: absolute;
+  bottom: 100px;
 }
 
 #centeredContainer > div > a {
@@ -20,5 +22,13 @@
 
 #centeredContainer > div > #boxButton:hover {
   background-color: #ac0000;
+}
+
+.paddingContainer {
+  width: 100%;
+  height: 100%;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  padding: 15px;
 }
 /*# sourceMappingURL=startup.css.map */

@@ -4,10 +4,25 @@ body {
   width: 100%;
   height: 100vh;
   font-family: "Lato", sans-serif;
-  background-color: #363636;
-  color: white;
   -webkit-box-sizing: border-box;
           box-sizing: border-box;
+  background-color: #363636;
+  color: white;
+  overflow: hidden !important;
+}
+
+#navbar {
+  display: inline-block;
+  width: 350px;
+  height: 100%;
+}
+
+#rightContainer {
+  display: inline-block;
+  position: absolute;
+  left: 350px;
+  width: calc(100% - 350px);
+  height: 100%;
 }
 
 #navbar {
@@ -19,31 +34,42 @@ body {
   width: 350px;
   height: 100%;
   text-align: left;
+  border-right: 1px black solid;
+  z-index: 2;
 }
 
-#navbar #branding {
-  height: 100px;
+#navbar > #branding {
+  position: relative;
+  width: 100%;
+  height: 70px;
+  /* The absolute positioning here isn't really the "best" way to do this... 
+            but it doesn't really matter; Anything that would normally mess up has 
+            hardcoded pixel values so it doesn't really affect that */
 }
 
-#navbar #branding > div, #navbar #branding > img {
-  display: inline-block;
-  vertical-align: top;
+#navbar > #branding > img {
+  width: 70px;
+  position: absolute;
+  right: 10px;
+  top: 10px;
 }
 
-#navbar #branding > div {
-  line-height: 100px;
-  width: calc(100% - 100px);
-  height: 100px;
-}
-
-#navbar #branding > img {
-  width: 69.5px;
-  padding: 12.5px;
-  margin-top: calc(calc(100px - 73.2333px) / 2);
+#navbar > #branding > h1 {
+  font-size: 30px;
+  position: absolute;
+  width: calc(100% - 70px);
+  left: 10px;
+  width: -webkit-fit-content;
+  width: -moz-fit-content;
+  width: fit-content;
+  line-height: 70px;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 #navbar > ul {
   padding-left: 0;
+  margin: 0;
 }
 
 #navbar > ul > li {
@@ -52,12 +78,13 @@ body {
   list-style-type: none;
   width: 350px;
   height: 50px;
+  border-top: 1px black solid;
 }
 
 #navbar > ul > li > a {
   display: block;
-  padding-left: 40px;
-  width: calc(100% - 40px);
+  padding-left: 10px;
+  width: calc(100% - 10px);
   height: 100%;
   color: white;
   line-height: 50px;
@@ -70,24 +97,31 @@ body {
   background-color: #DD0000;
 }
 
-#navbar #processInformation {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
+#navbar > ul > li:last-of-type {
+  border-bottom: 1px black solid;
 }
 
-#navbar #processInformation a {
+#navbar > #processInformation {
+  position: absolute;
+  left: 10px;
+  bottom: 60px;
+}
+
+#navbar > #processInformation > div > a {
   color: white;
 }
 
-#navbar, #rightContainer {
-  display: inline-block;
-}
-
-#rightContainer {
+#navbar > #status {
   position: absolute;
-  left: 300px;
-  top: 0;
-  width: calc(100% - 350px);
+  bottom: 0;
+  left: 0;
+  text-align: center;
+  width: 100%;
+  height: 50px;
+  line-height: 50px;
+  background-color: #7C0000;
+  color: white;
+  font-size: 14px;
+  font-family: "Lato", sans-serif;
 }
 /*# sourceMappingURL=universal.css.map */

@@ -9,8 +9,8 @@
     <link rel="stylesheet" href="frontend/box.css" />
 
     <!-- Electron needs this, for whatever reason. 
-      See: https://electronjs.org/docs/tutorial/security#csp-meta-tag - ->
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" /> -->
+      See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
 
   </head>
   <body> 
@@ -18,10 +18,8 @@
     <nav id="navbar">
 
       <div id="branding">
-
         <img src="./static/TeamLogo.png" />
         <h1>Scylla</h1>
-
       </div>
 
       <ul>
@@ -30,27 +28,41 @@
       </ul>
 
       <div id="processInformation">
-        <div>Scylla, Version 1.0</div>    
-        <div><a href="https://github.com/aacitelli/Scylla">GitHub Repo</a></div>  
-        <div>        
-          Node <script>document.write(process.versions.node)</script>,
-          Chrome <script>document.write(process.versions.chrome)</script>,
-          Electron <script>document.write(process.versions.electron)</script>
-        </div>
+
+        <div>Scylla, Version 1.0 (<a href="https://github.com/aacitelli/Scylla">GitHub</a>)</div>
+
+        <br>
+
+        <div>Process Details:</div>
+        <div>Node <script>document.write(process.versions.node)</script></div>
+        <div>Chrome <script>document.write(process.versions.chrome)</script></div>
+        <div>Electron <script>document.write(process.versions.electron)</script></div>
+          
       </div>   
+
+      <div id="status">Status: Waiting For User Input</div>
     </nav>
 
     <div id="rightContainer">
       <ul id="baseOfMyTree">
+        <li class="boxItem">
+          <div class="boxItemEnableButton"></div>
+          <div class="boxItemText">File Name</div>
+        </li>
       </ul>
-      <div id="status"></div>    
-      <button id="loginRedo" onclick="launchOpenLabeling()">If login failed, click me!</button>
-
+      <button id="boxSelectedButton">Box Selected</button>
+      <div id="boxingQueueContainer">
+        <h3>Items Queued to BBox</h3>
+        <ul id="boxingQueue">
+          <li>File 1</li>
+          <li>File 2</li>
+          <li>File 3</li>
+          <li>File 4</li>
+          <li>File 5</li>
+        </ul>
+      </div>      
     </div>
 
-    <!-- TODO: Make this use Box's UI Elements instead of a quick mockup that I did. See https://developer.box.com/guides/embed/ui-elements/explorer/ -->
-
-    
     <!-- Needs to exec after any DOM elements that it modifies -->
     <script src="box.js"></script>
 

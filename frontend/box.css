@@ -1,58 +1,78 @@
-body {
+#baseOfMyTree {
+  list-style-type: none;
+  padding-left: 0;
   margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100vh;
-  font-family: "Lato", sans-serif;
+  width: calc(100% - 300px);
 }
 
-#processInformation {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-}
-
-#loginRedo {
-  position: absolute;
-  right: 0px;
-  bottom: 0px;
-  padding: 10px;
-  background-color: #bd0000;
-  color: white;
-  font-size: 16px;
-}
-
-#box_folder {
-  width: 100%;
-  border: 1px red solid;
-}
-
-#box_folder .box_item {
-  border: 1px black solid;
-  height: 25px;
-  line-height: 25px;
-  padding-left: 10px;
-  font-size: 18px;
-  color: #BD0000;
-}
-
-#status {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  text-align: center;
+.boxItem {
   width: 100%;
   height: 50px;
-  line-height: 50px;
+  color: white;
+  border-bottom: 1px black solid;
+}
+
+.boxItem > div {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.boxItem .boxItemEnableButton {
+  width: 50px;
+  height: 50px;
   background-color: #BD0000;
+}
+
+.boxItem .selectedToBox {
+  background-color: green;
+}
+
+.boxItem .boxItemText {
+  font-size: 18px;
+  line-height: 50px;
+  padding: 0px 10px;
+}
+
+#boxingQueueContainer {
+  color: white;
+  background-color: black;
+  width: 300px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding-left: 10px;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  height: calc(100% - 50px);
+  overflow-y: hidden;
+  background-color: #BD0000;
+}
+
+#boxingQueueContainer > #boxingQueue {
+  list-style-type: none;
+  padding-left: 0;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+#boxingQueueContainer > #boxingQueue > li {
+  height: 50px;
+  line-height: 50px;
+  color: white;
+  border-bottom: white;
+  background-color: #880000;
+}
+
+#boxSelectedButton {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 50px;
+  background-color: #9B0000;
   color: white;
   font-size: 18px;
-  font-family: "Lato", sans-serif;
+  border: none;
+  border-top: 1px black solid;
 }
-
-#baseOfMyTree {
-  color: white; 
-  font-size: 40px; 
-}
-
 /*# sourceMappingURL=box.css.map */
