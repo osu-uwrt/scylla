@@ -66,12 +66,21 @@ function updateScreenQueue() {
     }
 }
 
+function getAllIDs() {
+    let arr = []; 
+    for (let i = 0; i < itemsToBox.length; i++) {
+        arr.push(itemsToBox[i].fileID);
+    }
+    return arr; 
+}
+
 // Electron (More specifically, node) can only handle CommonJS modules, not ES6
 module.exports = {
     itemsToBox: itemsToBox, 
     idIsInQueue: idIsInQueue, 
     removeFromQueue: removeFromQueue, 
     addToQueue: addToQueue, 
-    processNewItem: processNewItem
+    processNewItem: processNewItem, 
+    getAllIDs: getAllIDs
 }
 

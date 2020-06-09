@@ -114,6 +114,12 @@ body {
         }
     }
 
+    > #navbarTextContent {
+        width: 100%;
+        padding: 0 10px;
+        box-sizing: border-box;
+    }
+
     > #processInformation {
         position: absolute;
         left: 10px;

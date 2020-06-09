@@ -23,9 +23,35 @@ const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "inp
 const OL_OUTPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "output", "YOLO_darknet");
 const BOX_BASE_FOLDERID = "29024524811";
 const BOX_OUTPUT_FOLDERID = "105343099285"; 
+var parentFolderID = -1; // Will eventually be an items object but -1 is the default value indicating we haven't done any network requests yet 
 var videoNames = []; // Array of strings of each video name 
 var numVideos; // Integer tracking how many videos we are processing. 
 var fileIDsToBox = [] //Array of fileIDs created by the user that need to be boxed
+
+// Right clicking on the main file tree goes up a folder 
+// TODO: Slightly faster when menuing to save the folder contents instead of making a network request every time you want to access the folder. Comes with the downside of not updating your data past the first time you load that folder; Maybe make it immediately render what it has "cached" and then update that whenever the network request finishes?
+document.getElementById("baseOfMyTree").addEventListener("contextmenu", e => {
+
+  // If our first folder hasn't loaded yet, and our "parent" folder is currently undefined, return, because this isn't a valid use case 
+  if (parentFolderID === -1) {
+    return;
+  }
+
+  // If we're at the topmost folder in our entire heirarchy, and thus our "parent" folder is currently undefined, return, because this isn't a valid use case 
+  if (parentFolderID === null) {
+
+  }
+
+  // Otherwise, we just access the object for our current folder and do a network request for and display the new page 
+  displayFolder(parentFolderID)
+}); 
+
+document.getElementById("boxSelectedButton").addEventListener("click", e => {
+  let ids = BoxingQueue.getAllIDs(); 
+  if (ids.length != 0) { // If queue is empty, don't launch OL 
+    postExplorer(ids); 
+  }
+});
 
 /* 
   PURPOSE: Figures out where OpenLabeling is and launches it. 
@@ -132,6 +158,17 @@ function login() {
   passes control to the function that launches OpenLabeling. */ 
 async function loginPostClient() {
 
+  console.log("Getting base folder.");
+  client.folders.get("0") 
+    .then(folder => {
+      console.log("Base Folder: ", folder); 
+    })
+
+  client.folders.getItems("0")
+    .then(folderItems => {
+      console.log("Base Olfder Items: ", folderItems); 
+    })
+
   updateStatus("Authenticated. Waiting for user file selection.")
 
   console.debug("Clearing input directory before we download to it.");
@@ -140,11 +177,7 @@ async function loginPostClient() {
 
   // console.debug("Making client.folder.getItems API call on box raw folder");
   //this creates the directory that can be navigated there will have to be two buttons one to add this to the array and one to move further in to a folder
-  client.folders.getItems(BOX_BASE_FOLDERID)
-  .then(items => {
-    console.log("items: ", items); 
-    displayResultsOfNetworkRequest(items);    
-  });
+  // displayFolder(BOX_BASE_FOLDERID); 
 
   // Testing with several arbitrary video files from Box 
   // cpostExplorer(["607640898018", "487069577508"]);
@@ -185,6 +218,43 @@ async function loginPostClient() {
   */
 }
 
+// We also update some other variables as part of the network request, so we 
+// do this in a separate function 
+function displayFolder(id) {
+
+  var requestsCompleted = 0; 
+
+  // Network request to get the folder's items 
+  client.folders.getItems(id)
+  .then(folder => {
+    requestsCompleted++;
+
+    // Loop in a non-thread-blocking manner until both network requests are done
+    // If we get out of this function before both are done it can theoretically lead to errors when the user goes into a folder then immediately backs out (i.e. when the first request completes and is rendered, but the second hasn't completed yet)
+    var interval = setInterval(() => {
+      if (requestsCompleted === 2) {
+        displayResultsOfNetworkRequest(folder);
+        clearTimeout(interval); // Stop this from looping 
+        return;
+      }
+    }, 10); 
+  });  
+  
+  // Network request to get the folder's information (we need parent folder id)
+  client.folders.get(id) 
+  .then(folder => {
+
+    // If this is our base folder, the "parent" attribute will be null
+    if (folder.parent === null) {
+      parentFolderID = null;
+    } else {
+      parentFolderID = folder.parent.id;
+    }
+     
+    requestsCompleted++;
+  });
+}
+
 function displayResultsOfNetworkRequest(items) {
 
   console.log("Displaying following object: ", items);
@@ -204,6 +274,7 @@ function displayResultsOfNetworkRequest(items) {
     boxItemText.textContent = items.entries[i].name; 
 
     let boxItem = document.createElement("li");
+    boxItem.classList.toggle("boxItem");
     boxItem.appendChild(boxItemEnableButton);
     boxItem.appendChild(boxItemText);
 
@@ -226,7 +297,9 @@ function displayResultsOfNetworkRequest(items) {
     else {
 
       // If it's currently already in the queue, we render the button as green 
-      boxItem.firstChild.classList.toggle("selectedToBox");
+      if (BoxingQueue.idIsInQueue(items.entries[i].id)) {
+        boxItem.firstChild.classList.toggle("selectedToBox");
+      }      
 
       // It's a viable file to bbox, so we give it an onclick 
       boxItem.onclick = function() {
@@ -245,24 +318,6 @@ function displayResultsOfNetworkRequest(items) {
     // element.textContent 
     // querySelectorAll
   }
-}
-
-/**
- * Adds an element to the array fileIDsToBox if the element is not already in the array or removes it otherwise indicating with button color
- * red for not added
- * green for added
- */
-function toBoxAddOrRemove(button, item){
-  if(fileIDsToBox.includes(item.id)){
-    fileIDsToBox.splice(fileIDsToBox.indexOf(item.id),1);
-    button.style.color = "red";
-    console.debug("We removed :",item.id, "from the array");
-  }else{
-    fileIDsToBox.push(item.id);
-    button.style.color = "green";
-    console.debug("We added to the array :",item.id);
-  }
-  
 }
 
 /* Takes in an array of Box File IDs, downloads them, lets the user Box them, then uploads them to Box. 
@@ -665,28 +720,11 @@ function zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames, vide
     });
 }
 
-// Updates the front-end display based on the files object returned from client.folder.get("FOLDER_ID") on https://github.com/box/box-node-sdk/blob/master/docs/folders.md
-// We could also just feed in the folder id here, but we don't want more than one network request to the same thing 
-function displayFolderContents(files) {
-
-  // TODO: Clark, write this. I already have all the calls to this function done. 
-  return;
-
-}
-
-// ! BELOW HERE ARE THE LESS IMPORTANT / UTILITY FUNCTIONS 
-
 // Fills videoNames (global variable) given the files object 
 function getVideoNamesFromFilesObject(files) {
   videoNames = [];
   for (let i = 0; i < files.entries.length; i++) {
     videoNames[i] = files.entries[i].name.replace(".", "_");
-  }
-}
-
-async function removeChildrenOfElement(element) {
-  while (element.lastElementChild) {
-    element.removeChild(element.lastElementChild);
   }
 }
 
