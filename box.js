@@ -32,6 +32,8 @@ var fileIDsToBox = [] //Array of fileIDs created by the user that need to be box
 // TODO: Slightly faster when menuing to save the folder contents instead of making a network request every time you want to access the folder. Comes with the downside of not updating your data past the first time you load that folder; Maybe make it immediately render what it has "cached" and then update that whenever the network request finishes?
 document.getElementById("baseOfMyTree").addEventListener("contextmenu", e => {
 
+  console.log("Right click.");
+
   // If our first folder hasn't loaded yet, and our "parent" folder is currently undefined, return, because this isn't a valid use case 
   if (parentFolderID === -1) {
     return;
@@ -39,7 +41,7 @@ document.getElementById("baseOfMyTree").addEventListener("contextmenu", e => {
 
   // If we're at the topmost folder in our entire heirarchy, and thus our "parent" folder is currently undefined, return, because this isn't a valid use case 
   if (parentFolderID === null) {
-
+    return;
   }
 
   // Otherwise, we just access the object for our current folder and do a network request for and display the new page 
@@ -158,17 +160,6 @@ function login() {
   passes control to the function that launches OpenLabeling. */ 
 async function loginPostClient() {
 
-  console.log("Getting base folder.");
-  client.folders.get("0") 
-    .then(folder => {
-      console.log("Base Folder: ", folder); 
-    })
-
-  client.folders.getItems("0")
-    .then(folderItems => {
-      console.log("Base Olfder Items: ", folderItems); 
-    })
-
   updateStatus("Authenticated. Waiting for user file selection.")
 
   console.debug("Clearing input directory before we download to it.");
@@ -177,7 +168,7 @@ async function loginPostClient() {
 
   // console.debug("Making client.folder.getItems API call on box raw folder");
   //this creates the directory that can be navigated there will have to be two buttons one to add this to the array and one to move further in to a folder
-  // displayFolder(BOX_BASE_FOLDERID); 
+  displayFolder(BOX_BASE_FOLDERID); 
 
   // Testing with several arbitrary video files from Box 
   // cpostExplorer(["607640898018", "487069577508"]);
@@ -222,37 +213,26 @@ async function loginPostClient() {
 // do this in a separate function 
 function displayFolder(id) {
 
-  var requestsCompleted = 0; 
-
-  // Network request to get the folder's items 
-  client.folders.getItems(id)
-  .then(folder => {
-    requestsCompleted++;
-
-    // Loop in a non-thread-blocking manner until both network requests are done
-    // If we get out of this function before both are done it can theoretically lead to errors when the user goes into a folder then immediately backs out (i.e. when the first request completes and is rendered, but the second hasn't completed yet)
-    var interval = setInterval(() => {
-      if (requestsCompleted === 2) {
-        displayResultsOfNetworkRequest(folder);
-        clearTimeout(interval); // Stop this from looping 
-        return;
-      }
-    }, 10); 
-  });  
-  
-  // Network request to get the folder's information (we need parent folder id)
+  // TODO: Do these async instead of sequentially (did sequentially for demo purposes)
+  // async is possible here because the second call doesn't require information from the first, essentially 
   client.folders.get(id) 
   .then(folder => {
 
-    // If this is our base folder, the "parent" attribute will be null
+    // Update parent folder id 
     if (folder.parent === null) {
+      console.log("Current folder has no parent.");
       parentFolderID = null;
     } else {
+      console.log("Successfully updated parent folder cache.");
       parentFolderID = folder.parent.id;
     }
-     
-    requestsCompleted++;
-  });
+
+    // Retrieve actual folder contents so we can render them 
+    client.folders.getItems(id)
+    .then(folder2 => {
+      displayResultsOfNetworkRequest(folder2);
+    });    
+  });  
 }
 
 function displayResultsOfNetworkRequest(items) {
@@ -266,8 +246,11 @@ function displayResultsOfNetworkRequest(items) {
   // Iterate through each file and display it
   for (let i = 0; i < items.entries.length; i++) {
 
-    let boxItemEnableButton = document.createElement("div");
-    boxItemEnableButton.classList.toggle("boxItemEnableButton");
+    // You can't bbox a folder
+    if (items.entries[i].type !== "folder") {
+      var boxItemEnableButton = document.createElement("div");
+      boxItemEnableButton.classList.toggle("boxItemEnableButton");
+    }
 
     let boxItemText = document.createElement("div");
     boxItemText.classList.toggle("boxItemText");
@@ -275,22 +258,16 @@ function displayResultsOfNetworkRequest(items) {
 
     let boxItem = document.createElement("li");
     boxItem.classList.toggle("boxItem");
-    boxItem.appendChild(boxItemEnableButton);
+    if (items.entries[i].type !== "folder") { boxItem.appendChild(boxItemEnableButton); } // Variable is only in scope if it isn't a folder
     boxItem.appendChild(boxItemText);
 
     // If it's a folder
     if (items.entries[i].type === "folder") {
 
       // If it's a folder, we add an onclick to it that will perform the next network request
-      client.folders.getItems(items.entries[i].id)
-      .then(items2 => {
-        boxItem.onclick = function(){
-          updateStatus("Waiting for user input.");
-          displayResultsOfNetworkRequest(items2)
-        };    
-      });
-
-      updateStatus("Fetching directory contents.");
+      boxItem.onclick = function() {
+        displayFolder(items.entries[i].id);
+      }
     }
 
     // Otherwise, it's a viable file to bbox 
@@ -312,11 +289,6 @@ function displayResultsOfNetworkRequest(items) {
     }
 
     baseOfTree.appendChild(boxItem);
-
-    // document.getElementById("id")
-    // element.appendChild 
-    // element.textContent 
-    // querySelectorAll
   }
 }
 

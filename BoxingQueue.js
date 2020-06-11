@@ -29,6 +29,7 @@ function removeFromQueue(id) {
 }
 
 function addToQueue(name, id) {
+  console.log("Adding following object to Boxing queue: ", { nameOfFile: name, fileID: id });
     itemsToBox.push({ nameOfFile: name, fileID: id });
 }
 
