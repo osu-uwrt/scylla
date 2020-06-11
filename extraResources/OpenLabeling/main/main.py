@@ -25,7 +25,8 @@ print("Looking for site_packages at this path: " + str(sitePackagesAddress))
 sys.path.append(sitePackagesAddress)
 
 # If you have a ros installation, it pulls cv2 from that for whatever reason, so we get rid of that 
-sys.path.remove("/opt/ros/kinetic/lib/python2.7/dist-packages")
+if sys.path.count("/opt/ros/kinetic/lib/python2.7/dist-packages") > 0:
+  sys.path.remove("/opt/ros/kinetic/lib/python2.7/dist-packages")
 
 import argparse
 import glob

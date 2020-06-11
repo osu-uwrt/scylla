@@ -26,7 +26,6 @@
     "archiver": "^3.1.1",
     "box-node-sdk": "^1.31.0",
     "box-ui-elements": "^11.0.2",
-    "electron-reload": "^1.5.0",
     "glob": "^7.1.6",
     "natural-orderby": "^2.0.3",
     "ncp": "^2.0.0",

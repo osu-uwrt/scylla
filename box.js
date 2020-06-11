@@ -1,4 +1,3 @@
-// TODO: Redo the styling to be dark mode (cause light mode sucks) 
 // General Dependencies 
 const electron = require('electron');
 var rimraf = require("rimraf");
@@ -21,12 +20,14 @@ var BoxingQueue = require("./BoxingQueue");
 //* Global Variables (otherwise we'd pass them around EVERYWHERE)
 const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
 const OL_OUTPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "output", "YOLO_darknet");
-const BOX_BASE_FOLDERID = "29024524811";
+const BOX_BASE_FOLDERID = "50377768738";
 const BOX_OUTPUT_FOLDERID = "105343099285"; 
 var parentFolderID = -1; // Will eventually be an items object but -1 is the default value indicating we haven't done any network requests yet 
 var videoNames = []; // Array of strings of each video name 
 var numVideos; // Integer tracking how many videos we are processing. 
 var fileIDsToBox = [] //Array of fileIDs created by the user that need to be boxed
+
+// TODO: Reorganize this whole damn thing b/c this is a train wreck and a half 
 
 // Right clicking on the main file tree goes up a folder 
 // TODO: Slightly faster when menuing to save the folder contents instead of making a network request every time you want to access the folder. Comes with the downside of not updating your data past the first time you load that folder; Maybe make it immediately render what it has "cached" and then update that whenever the network request finishes?
@@ -50,22 +51,48 @@ document.getElementById("baseOfMyTree").addEventListener("contextmenu", e => {
 
 document.getElementById("boxSelectedButton").addEventListener("click", e => {
   let ids = BoxingQueue.getAllIDs(); 
-  if (ids.length != 0) { // If queue is empty, don't launch OL 
+  console.log("Got the following ids to download from BoxingQueue: ", ids); 
+  if (ids.length !== 0) { // If queue is empty, don't launch OL 
+    console.log("Have at least one file selected. Downloading them.");
     postExplorer(ids); 
   }
 });
+
+function updateClassList() {
+
+  return new Promise((resolve, reject) => {
+    // File ID for ClassNumbers.txt on Box
+    client.files.getReadStream("655988721088", null, function(err, stream) {
+
+      if (err) {
+        // TODO: Handle this more gracefully.
+        reject("Error downloading ClassNumbers.txt"); 
+        reject("Please restart the app. This is likely because of an issue w/ Box itself, or your internet connection failed.");
+      }
+    
+      // Write the file to OpenLabeling's input directory
+      var writeStream = fs.createWriteStream(path.join("extraResources", "OpenLabeling", "main", "class_list.txt"), "utf8", );
+      stream.pipe(writeStream);
+      stream.on("end", () => {
+        resolve(""); // Don't need to return anything, but we have to return the promise 
+      }); 
+    });
+  });
+}
 
 /* 
   PURPOSE: Figures out where OpenLabeling is and launches it. 
   When done, passes control to the function that uploads the results. 
 */ 
-function launchOpenLabeling() {
-
-  clearDirectory(path.join(OL_OUTPUT_FOLDER, "../"));
+async function launchOpenLabeling(baseDir) {
 
   // Change where we look for resources based on if we're developing or actually in a distribution package.
   var baseDir = resolveBaseDir();
   console.log("baseDir: " + baseDir);
+
+  await updateClassList(baseDir); // Function is async because it relies on a file download, but 
+  clearDirectory(path.join(OL_OUTPUT_FOLDER, "../")); // Get rid of existing output from the last time we ran 
+  clearDirectory(path.join(baseDir, "ZipFiles"));
 
   // Figuring out where we launch OpenLabeling from 
   var OLMainFilePath = path.resolve(path.join(baseDir, "extraResources", "OpenLabeling", "main", "main.py"));
@@ -299,14 +326,14 @@ function postExplorer(downloadIDs) {
 
   let numFilesDownloaded = 0; // Number of files that network requests have completed. 
 
-  console.debug("downloadIDs: " + downloadIDs); 
+  console.debug("Downloading all of the following ids: " + downloadIDs); 
 
   // Iterate through each ID that we have to download 
   for (let i = 0; i < downloadIDs.length; i++) {
 
     // Get information about the file so we know what to name it
     client.files.get(downloadIDs[i])
-    .then (file => {
+    .then(file => {
 
       console.debug("Downloading file named " + file.name);
 
@@ -315,13 +342,19 @@ function postExplorer(downloadIDs) {
 
         // If there was an error downloading, complain about it 
         if (err) {
+          // TODO: Handle this more gracefully.
           console.error("Error downloading file with id " + downloadIDs[i]); 
           console.error("Please restart the app. This is likely because of an issue w/ Box itself, or your internet connection failed.");
         } 
+
+        console.log("Opened read stream to the object.");
   
         // Write the file to OpenLabeling's input directory
         var output = fs.createWriteStream(path.join(OL_INPUT_FOLDER, file.name)); 
+        console.log("Created write stream.");
         stream.pipe(output);
+
+        console.log("Piping the stream to the object.");
 
         // If we fire the "end" event, we know that the file fully downloaded
         stream.on("end", () => {
