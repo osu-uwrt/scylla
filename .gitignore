@@ -32,5 +32,6 @@ yarn-error.log*
 extraResources/OpenLabeling/main/output/*
 extraResources/OpenLabeling/main/input/*
 extraResources/site_packages
+ZipFiles/*
 out
 dist
