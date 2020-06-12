@@ -16,6 +16,7 @@ var fs = require("fs");
 
 // Other custom JS files that we want code from 
 var BoxingQueue = require("./BoxingQueue");
+var FolderCache = require("./FolderCache");
 
 //* Global Variables (otherwise we'd pass them around EVERYWHERE)
 const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
@@ -119,7 +120,7 @@ function updateStatus(statusMessage) {
 // Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
 /* PURPOSE: Goes through all the authentication stuff and gets us a fully authenticated client object that we can use to actually make requests */
 // TODO: Set this to false when actually building for production 
-var usingDevToken = false;
+var usingDevToken = true;
 login(); // Called when page loads
 function login() {
 
@@ -240,26 +241,53 @@ async function loginPostClient() {
 // do this in a separate function 
 function displayFolder(id) {
 
-  // TODO: Do these async instead of sequentially (did sequentially for demo purposes)
-  // async is possible here because the second call doesn't require information from the first, essentially 
+  // If it's already cached, don't worry about the network request 
+  if (FolderCache.folderIsCached(id)) {
+
+    console.log("Folder we're about to render was cached.");
+    
+    // Update parent 
+    let folderInfo = FolderCache.getPageInfo(id); 
+    if (folderInfo.parent === null) {
+      parentFolderID = null; 
+    } else {
+      parentFolderId = folderInfo.parent.id; 
+    }
+
+    // Update page display 
+    let folderItems = FolderCache.getPageItems(id); 
+    displayResultsOfNetworkRequest(folderItems);
+  }
+
+  else {
+    // Otherwise, we do the network request and put it in the cache when we get it 
   client.folders.get(id) 
-  .then(folder => {
+  .then(fInfo => {
+
+    console.log("Folder we're about to render was NOT cached.");
+
+    // Add folder information to cache 
+    FolderCache.addInfoToCache(id, fInfo); 
 
     // Update parent folder id 
-    if (folder.parent === null) {
+    if (fInfo.parent === null) {
       console.log("Current folder has no parent.");
       parentFolderID = null;
     } else {
       console.log("Successfully updated parent folder cache.");
-      parentFolderID = folder.parent.id;
+      parentFolderID = fInfo.parent.id;
     }
 
     // Retrieve actual folder contents so we can render them 
     client.folders.getItems(id)
-    .then(folder2 => {
-      displayResultsOfNetworkRequest(folder2);
-    });    
-  });  
+      .then(fItems => {
+
+        // Add folder items to cache 
+        FolderCache.addItemsToCache(id, fItems);
+        displayResultsOfNetworkRequest(fItems);
+      });    
+    });  
+  }
 }
 
 function displayResultsOfNetworkRequest(items) {
