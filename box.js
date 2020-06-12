@@ -119,7 +119,7 @@ function updateStatus(statusMessage) {
 // Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
 /* PURPOSE: Goes through all the authentication stuff and gets us a fully authenticated client object that we can use to actually make requests */
 // TODO: Set this to false when actually building for production 
-var usingDevToken = true;
+var usingDevToken = false;
 login(); // Called when page loads
 function login() {
 
