@@ -17,6 +17,7 @@ var fs = require("fs");
 // Other custom JS files that we want code from 
 var BoxingQueue = require("./BoxingQueue");
 var FolderCache = require("./FolderCache");
+var BoxFilePathTracker = require("./BoxFilePathTracker");
 
 //* Global Variables (otherwise we'd pass them around EVERYWHERE)
 const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
@@ -188,6 +189,10 @@ function login() {
   passes control to the function that launches OpenLabeling. */ 
 async function loginPostClient() {
 
+  const firstFolder = BOX_BASE_FOLDERID; 
+  BoxFilePathTracker.fillFromBaseFolder(firstFolder);
+
+  // Read the file path all the way up to the folder we're currently in 
   updateStatus("Authenticated. Waiting for user file selection.")
 
   console.debug("Clearing input directory before we download to it.");
@@ -196,7 +201,7 @@ async function loginPostClient() {
 
   // console.debug("Making client.folder.getItems API call on box raw folder");
   //this creates the directory that can be navigated there will have to be two buttons one to add this to the array and one to move further in to a folder
-  displayFolder(BOX_BASE_FOLDERID); 
+  displayFolder(firstFolder); 
 
   // Testing with several arbitrary video files from Box 
   // cpostExplorer(["607640898018", "487069577508"]);
@@ -254,6 +259,9 @@ function displayFolder(id) {
       parentFolderId = folderInfo.parent.id; 
     }
 
+    // Add it to our component that tracks the overall file path to this point 
+    BoxFilePathTracker.addFolderToPath(id, folderInfo.name); 
+
     // Update page display 
     let folderItems = FolderCache.getPageItems(id); 
     displayResultsOfNetworkRequest(folderItems);
@@ -288,6 +296,11 @@ function displayFolder(id) {
       });    
     });  
   }
+}
+
+function updateFilePath() {
+  let filePath = BoxFilePathTracker.getCurrentPath(); 
+  
 }
 
 function displayResultsOfNetworkRequest(items) {
