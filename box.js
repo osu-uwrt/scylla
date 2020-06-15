@@ -16,8 +16,7 @@ var fs = require("fs");
 
 // Other custom JS files that we want code from 
 var BoxingQueue = require("./BoxingQueue");
-var FolderCache = require("./FolderCache");
-var BoxFilePathTracker = require("./BoxFilePathTracker");
+var BoxFilePathTracker = require("./BoxTraversal");
 
 //* Global Variables (otherwise we'd pass them around EVERYWHERE)
 const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
@@ -28,28 +27,6 @@ var parentFolderID = -1; // Will eventually be an items object but -1 is the def
 var videoNames = []; // Array of strings of each video name 
 var numVideos; // Integer tracking how many videos we are processing. 
 var fileIDsToBox = [] //Array of fileIDs created by the user that need to be boxed
-
-// TODO: Reorganize this whole damn thing b/c this is a train wreck and a half 
-
-// Right clicking on the main file tree goes up a folder 
-// TODO: Slightly faster when menuing to save the folder contents instead of making a network request every time you want to access the folder. Comes with the downside of not updating your data past the first time you load that folder; Maybe make it immediately render what it has "cached" and then update that whenever the network request finishes?
-document.getElementById("baseOfMyTree").addEventListener("contextmenu", e => {
-
-  console.log("Right click.");
-
-  // If our first folder hasn't loaded yet, and our "parent" folder is currently undefined, return, because this isn't a valid use case 
-  if (parentFolderID === -1) {
-    return;
-  }
-
-  // If we're at the topmost folder in our entire heirarchy, and thus our "parent" folder is currently undefined, return, because this isn't a valid use case 
-  if (parentFolderID === null) {
-    return;
-  }
-
-  // Otherwise, we just access the object for our current folder and do a network request for and display the new page 
-  displayFolder(parentFolderID)
-}); 
 
 document.getElementById("boxSelectedButton").addEventListener("click", e => {
   let ids = BoxingQueue.getAllIDs(); 
@@ -202,162 +179,6 @@ async function loginPostClient() {
   // console.debug("Making client.folder.getItems API call on box raw folder");
   //this creates the directory that can be navigated there will have to be two buttons one to add this to the array and one to move further in to a folder
   displayFolder(firstFolder); 
-
-  // Testing with several arbitrary video files from Box 
-  // cpostExplorer(["607640898018", "487069577508"]);
-
-  /* This code essentially downloads everything in the directory on Box. We do this differently in postExplorer() now. Just saved this b/c we may need it again. 
-  // getItems API Call Details: https://github.com/box/box-node-sdk/blob/master/docs/folders.md#get-a-folders-items
-  client.folders.getItems(BOX_BASE_FOLDERID)
-  .then(files => {
-
-    console.debug("getItems call complete; Files object: ", files);
-
-    // Assigning this global variable. This is used to know when we're done downloading everything;
-    // We need to track this because I'm like 90% sure these downloads are asynchronous.
-    numVideos = files.total_count; 
-    
-    console.debug("Iterating through each file and downloading.");
-    files.entries.forEach(file => {
-
-      let filesRead = 0; 
-      client.files.getReadStream(file.id, null, function (err, stream) {
-
-        if (err) console.error("File Download Error: ", err);
-
-        console.debug("File downloaded successfully. Writing to disk.");
-        let writeStream = fs.createWriteStream(path.join(OL_INPUT_FOLDER, file.name));
-        stream.pipe(writeStream);
-
-        writeStream.on("close", function () {
-          filesRead++; 
-          if (filesRead >= numVideos) {
-            getVideoNamesFromFilesObject(files);
-            launchOpenLabeling();
-          }
-        });
-      });
-    });
-  });
-  */
-}
-
-// We also update some other variables as part of the network request, so we 
-// do this in a separate function 
-function displayFolder(id) {
-
-  // If it's already cached, don't worry about the network request 
-  if (FolderCache.folderIsCached(id)) {
-
-    console.log("Folder we're about to render was cached.");
-    
-    // Update parent 
-    let folderInfo = FolderCache.getPageInfo(id); 
-    if (folderInfo.parent === null) {
-      parentFolderID = null; 
-    } else {
-      parentFolderId = folderInfo.parent.id; 
-    }
-
-    // Add it to our component that tracks the overall file path to this point 
-    BoxFilePathTracker.addFolderToPath(id, folderInfo.name); 
-
-    // Update page display 
-    let folderItems = FolderCache.getPageItems(id); 
-    displayResultsOfNetworkRequest(folderItems);
-  }
-
-  else {
-    // Otherwise, we do the network request and put it in the cache when we get it 
-  client.folders.get(id) 
-  .then(fInfo => {
-
-    console.log("Folder we're about to render was NOT cached.");
-
-    // Add folder information to cache 
-    FolderCache.addInfoToCache(id, fInfo); 
-
-    // Update parent folder id 
-    if (fInfo.parent === null) {
-      console.log("Current folder has no parent.");
-      parentFolderID = null;
-    } else {
-      console.log("Successfully updated parent folder cache.");
-      parentFolderID = fInfo.parent.id;
-    }
-
-    // Retrieve actual folder contents so we can render them 
-    client.folders.getItems(id)
-      .then(fItems => {
-
-        // Add folder items to cache 
-        FolderCache.addItemsToCache(id, fItems);
-        displayResultsOfNetworkRequest(fItems);
-      });    
-    });  
-  }
-}
-
-function updateFilePath() {
-  let filePath = BoxFilePathTracker.getCurrentPath(); 
-  
-}
-
-function displayResultsOfNetworkRequest(items) {
-
-  console.log("Displaying following object: ", items);
-
-  // Get reference to base and get rid of last folder we rendered
-  let baseOfTree = document.getElementById("baseOfMyTree");
-  while (baseOfTree.lastChild) { baseOfTree.removeChild(baseOfTree.lastChild); }
-
-  // Iterate through each file and display it
-  for (let i = 0; i < items.entries.length; i++) {
-
-    // You can't bbox a folder
-    if (items.entries[i].type !== "folder") {
-      var boxItemEnableButton = document.createElement("div");
-      boxItemEnableButton.classList.toggle("boxItemEnableButton");
-    }
-
-    let boxItemText = document.createElement("div");
-    boxItemText.classList.toggle("boxItemText");
-    boxItemText.textContent = items.entries[i].name; 
-
-    let boxItem = document.createElement("li");
-    boxItem.classList.toggle("boxItem");
-    if (items.entries[i].type !== "folder") { boxItem.appendChild(boxItemEnableButton); } // Variable is only in scope if it isn't a folder
-    boxItem.appendChild(boxItemText);
-
-    // If it's a folder
-    if (items.entries[i].type === "folder") {
-
-      // If it's a folder, we add an onclick to it that will perform the next network request
-      boxItem.onclick = function() {
-        displayFolder(items.entries[i].id);
-      }
-    }
-
-    // Otherwise, it's a viable file to bbox 
-    else {
-
-      // If it's currently already in the queue, we render the button as green 
-      if (BoxingQueue.idIsInQueue(items.entries[i].id)) {
-        boxItem.firstChild.classList.toggle("selectedToBox");
-      }      
-
-      // It's a viable file to bbox, so we give it an onclick 
-      boxItem.onclick = function() {
-
-        BoxingQueue.processNewItem(items.entries[i].name, items.entries[i].id);
-
-        // Make the button green 
-        boxItem.firstChild.classList.toggle("selectedToBox");
-      }
-    }
-
-    baseOfTree.appendChild(boxItem);
-  }
 }
 
 /* Takes in an array of Box File IDs, downloads them, lets the user Box them, then uploads them to Box. 
