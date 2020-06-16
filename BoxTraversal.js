@@ -157,6 +157,13 @@ async function displayFolder(id) {
     currentFolder.info = FolderCache.getPageInfo(id); 
     currentFolder.items = FolderCache.getPageItems(id); 
 
+    // Theoretically if it makes it in this block we're already at least starting preloading all of this, but extra redundancy is good for testing
+    currentFolder.items.entries.forEach(item => {
+      if (item.type === "folder") {
+        cacheID(item.id); 
+      }
+    });
+
     // Actually render the page
     let folderItems = FolderCache.getPageItems(id); 
     displayResultsOfNetworkRequest(folderItems);
@@ -165,8 +172,8 @@ async function displayFolder(id) {
   // Otherwise, we network request for it 
   // There's no need to do any actual code until we get both the info and the items. You could technically make a case for a very minor performance increase but these all take completely negligible amounts of time. 
   else {
-  client.folders.get(id).then(fInfo => {
-    client.folders.getItems(id).then(fItems => {
+    client.folders.get(id).then(fInfo => {
+      client.folders.getItems(id).then(fItems => {
 
         // Update this "module"'s record of current page stuff
         currentFolder.info = fInfo; 
@@ -174,12 +181,37 @@ async function displayFolder(id) {
 
         // Add to cache
         FolderCache.addFolderToCache(id, fItems, fInfo); 
+
+        // Preload (put into cache so it's instant when we want to retrieve it) every folder that's in this folder. Helps a TON with making the whole thing not feel sluggish. 
+        // I would normally be antsy about the number of API calls here but it's really no more than like 5-10 per folder and will generally be even less than that. 
+        fItems.entries.forEach(item => {
+          if (item.type === "folder") {
+            cacheID(item.id); 
+          }
+        });
         
         // Actually do the rendering based off of the items we found 
         displayResultsOfNetworkRequest(fItems);
       });    
     });  
   }
+}
+
+// Function that retrieves and caches a specific ID without actually displaying it. Used for preloading. 
+function cacheID(id) {
+
+  // If this folder is already cached, just get out of here 
+  if (FolderCache.folderIsCached(id)) {
+    return; 
+  }
+
+  // Otherwise, we have to do the network request and cache whatever we get. 
+  // TODO: Implement basic "lock by id" system that makes sure we aren't downloading the same folder at the same time twice. Really easy to do; Just keep a map that maps the id to a boolean on if it's currently at least in the process of being downloaded. 
+  client.folders.get(id).then(fInfo => {
+    client.folders.getItems(id).then(fItems => {
+      FolderCache.addFolderToCache(id, fItems, fInfo);
+    });    
+  });  
 }
 
 function displayResultsOfNetworkRequest(items) {
