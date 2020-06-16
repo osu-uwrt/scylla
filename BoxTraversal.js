@@ -63,30 +63,34 @@ function refreshHTML() {
   }
 
   // Iterate through each entry that we have 
-  folderPath.forEach(elem => {
+  for (let i = 0; i < folderPath.length; i++) { 
 
     // Element that we actually put the folder id in 
     let filePathText = document.createElement("div");
     filePathText.classList.toggle("filePathText");
-    filePathText.textContent = elem.name; 
+    filePathText.textContent = folderPath[i].name; 
     filePathText.addEventListener("click", () => {
-      shrinkArrToId(elem.id); 
-      displayFolder(elem.id)
+      shrinkArrToId(folderPath[i].id); 
+      displayFolder(folderPath[i].id);
     });
-    
-    // Spaces stuff out by a little bit 
-    let carat = document.createElement("div"); 
-    carat.textContent = " > "; 
 
     // Base list element that we'll append to 
     let li = document.createElement("li");
     li.classList.toggle("filePathEntry");
     li.appendChild(filePathText); 
-    li.appendChild(carat); 
+
+    // If it's not the last one, add the carat in between
+    // A css solution would probably be cleaner, but last-of-type doesn't work because each carat object is in a different <li> element
+    if (i + 1 < folderPath.length) {
+      let carat = document.createElement("div"); 
+      carat.classList.toggle("carat"); 
+      carat.textContent = ">"; 
+      li.appendChild(carat);
+    }
 
     // Append it to our overall list 
     root.appendChild(li); 
-  }); 
+  }
 }
 
 // Modifies our representation to reflect going one folder up in the Box heirarchy 
@@ -102,6 +106,8 @@ function oneFolderDown(id, name) {
 }
 
 function shrinkArrToId(id) {
+  console.log("Shrinking object to id " + id); 
+  console.log("Starting Object: ", folderPath); 
   let atRightLevel = false; 
   while (!atRightLevel) {
     let removed = folderPath.pop(); 
@@ -110,6 +116,8 @@ function shrinkArrToId(id) {
       atRightLevel = true;
     }
   }
+  refreshHTML();
+  console.log("Ending Object: ", folderPath); 
 }
 
 // Fills our representation based on the first folder we open
