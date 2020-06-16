@@ -9,8 +9,29 @@
   - Whenever the user clicks on a folder somewhere in the folder path, prune our representation to that point, display our folder, and refresh the html with our representation. 
 */
 
+module.exports = {
+  getBoxingQueue: getBoxingQueue, 
+  setClient: setClient, 
+  fillFromBaseFolder: fillFromBaseFolder
+}
+
 // Necessary imports 
 var FolderCache = require("./FolderCache");
+var BoxingQueue = require("./BoxingQueue");
+
+// Due to how this is organized, need to offer a way for the main file to get BoxingQueue stuff from this file 
+function getBoxingQueue() {
+  return BoxingQueue.getAllIDs(); 
+}
+
+// Client is technically global, but we need an instance of it here.
+var client; 
+function setClient(clientParam) {
+  client = clientParam; 
+}
+
+// Tracks (references to) info object and items object of currently opened folder 
+var currentFolder = {}; 
 
 /* Format: 
   Each array entry is an object with the following: 
@@ -21,9 +42,48 @@ var FolderCache = require("./FolderCache");
 */
 let folderPath = []; 
 
+// Right click anywhere in the heirarchy takes you up one level 
+document.getElementById("baseOfMyTree").addEventListener("contextmenu", () => {
+  
+  // If current page has a parent, adjust representation and render parent
+  if (currentFolder.parent !== null) {
+    oneFolderUp(); 
+    displayFolder(currentFolder.parent.id);
+  }
+});
+
 // Updates the HTML display to reflect whatever our representation says our current state is 
 function refreshHTML() {
 
+  // Grab a reference and clear what was already there
+  let root = document.getElementById("currentFilePath");
+  while (root.lastChild) { 
+    root.removeChild(root.lastChild); 
+  }
+
+  // Iterate through each entry that we have 
+  folderPath.forEach(elem => {
+
+    // Element that we actually put the folder id in 
+    let filePathText = document.createElement("div");
+    filePathText.textContent = elem.name; 
+    filePathText.addEventListener("click", () => {
+      shrinkArrToId(elem.id); 
+      displayFolder(elem.id)
+    });
+    
+    // Spaces stuff out by a little bit 
+    let carat = document.createElement("div"); 
+    carat.textContent = " > "; 
+
+    // Base list element that we'll append to 
+    let li = document.createElement("li");
+    li.appendChild(filePathText); 
+    li.appendChild(carat); 
+
+    // Append it to our overall list 
+    root.appendChild(li); 
+  }); 
 }
 
 // Modifies our representation to reflect going one folder up in the Box heirarchy 
@@ -68,55 +128,35 @@ function fillFromBaseFolder(id, client) {
   });
 }
 
-// Mode = context tracking; We want to change our representation only in certain places that we call this.
-// 0 = Initial Load To Program. Means we have to create our representation from scratch. 
-// 1 = Went Up One Folder Level. Means we have to prune our representation by one level. 
-// 2 = Went In One Folder Level. Means we have to append something to our representation. 
-// 3 = Selected some level up from the file tree. Means we have to prune our representation to the passed-in id. 
-function displayFolder(id, mode) {
+function displayFolder(id) {
 
-  // If it's already cached, don't worry about the network request 
+  // Already cached = Don't do a network request 
   if (FolderCache.folderIsCached(id)) {
-    
-    // Update parent 
-    let folderInfo = FolderCache.getPageInfo(id); 
-    if (folderInfo.parent === null) {
-      parentFolderID = null; 
-    } else {
-      parentFolderId = folderInfo.parent.id; 
-    }
 
-    // Add it to our component that tracks the overall file path to this point 
-    BoxFilePathTracker.addFolderToPath(id, folderInfo.name); 
+    // Update current page records 
+    currentFolder.info = FolderCache.getPageInfo(id); 
+    currentFolder.items = FolderCache.getPageItems(id); 
 
-    // Update page display 
+    // Actually render the page
     let folderItems = FolderCache.getPageItems(id); 
     displayResultsOfNetworkRequest(folderItems);
   }
 
+  // Otherwise, we network request for it 
+  // There's no need to do any actual code until we get both the info and the items. You could technically make a case for a very minor performance increase but these all take completely negligible amounts of time. 
   else {
-    // Otherwise, we do the network request and put it in the cache when we get it 
-  client.folders.get(id) 
-  .then(fInfo => {
+  client.folders.get(id).then(fInfo => {
+    client.folders.getItems(id).then(fItems => {
 
-    // Add folder information to cache 
-    FolderCache.addInfoToCache(id, fInfo); 
+        // Update this "module"'s record of current page stuff
+        currentFolder.info = FolderCache.getPageInfo(id); 
+        currentFolder.items = FolderCache.getPageItems(id); 
 
-    // Update parent folder id 
-    if (fInfo.parent === null) {
-      console.log("Current folder has no parent.");
-      parentFolderID = null;
-    } else {
-      console.log("Successfully updated parent folder cache.");
-      parentFolderID = fInfo.parent.id;
-    }
-
-    // Retrieve actual folder contents so we can render them 
-    client.folders.getItems(id)
-      .then(fItems => {
-
-        // Add folder items to cache 
+        // Add to cache
+        FolderCache.addInfoToCache(id, fInfo);
         FolderCache.addItemsToCache(id, fItems);
+        
+        // Actually do the rendering based off of the items we found 
         displayResultsOfNetworkRequest(fItems);
       });    
     });  
@@ -154,6 +194,7 @@ function displayResultsOfNetworkRequest(items) {
 
       // If it's a folder, we add an onclick to it that will perform the next network request
       boxItem.onclick = function() {
+        oneFolderDown(items.entries[i].id, items.entries[i].name); 
         displayFolder(items.entries[i].id);
       }
     }
@@ -178,11 +219,4 @@ function displayResultsOfNetworkRequest(items) {
 
     baseOfTree.appendChild(boxItem);
   }
-}
-
-module.exports = {
-  addFolderToPath: addFolderToPath, 
-  removeFolderFromPath: removeFolderFromPath, 
-  fillFromBaseFolder: fillFromBaseFolder, 
-  getCurrentPath: getCurrentPath
 }

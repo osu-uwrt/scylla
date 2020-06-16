@@ -15,21 +15,17 @@ var spawn = require("child_process").spawn;
 var fs = require("fs");
 
 // Other custom JS files that we want code from 
-var BoxingQueue = require("./BoxingQueue");
-var BoxFilePathTracker = require("./BoxTraversal");
+var BoxTraversal = require("./BoxTraversal");
 
 //* Global Variables (otherwise we'd pass them around EVERYWHERE)
 const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
 const OL_OUTPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "output", "YOLO_darknet");
 const BOX_BASE_FOLDERID = "50377768738";
 const BOX_OUTPUT_FOLDERID = "105343099285"; 
-var parentFolderID = -1; // Will eventually be an items object but -1 is the default value indicating we haven't done any network requests yet 
 var videoNames = []; // Array of strings of each video name 
-var numVideos; // Integer tracking how many videos we are processing. 
-var fileIDsToBox = [] //Array of fileIDs created by the user that need to be boxed
 
-document.getElementById("boxSelectedButton").addEventListener("click", e => {
-  let ids = BoxingQueue.getAllIDs(); 
+document.getElementById("boxSelectedButton").addEventListener("click", () => {
+  let ids = BoxTraversal.getBoxingQueue(); 
   console.log("Got the following ids to download from BoxingQueue: ", ids); 
   if (ids.length !== 0) { // If queue is empty, don't launch OL 
     console.log("Have at least one file selected. Downloading them.");
@@ -166,19 +162,12 @@ function login() {
   passes control to the function that launches OpenLabeling. */ 
 async function loginPostClient() {
 
-  const firstFolder = BOX_BASE_FOLDERID; 
-  BoxFilePathTracker.fillFromBaseFolder(firstFolder);
+  // Box File Structure Traversal Setup 
+  BoxTraversal.setClient(client);
+  BoxTraversal.fillFromBaseFolder(BOX_BASE_FOLDERID);
+  BoxTraversal.displayFolder(BOX_BASE_FOLDERID); 
 
-  // Read the file path all the way up to the folder we're currently in 
-  updateStatus("Authenticated. Waiting for user file selection.")
-
-  console.debug("Clearing input directory before we download to it.");
-  clearDirectory(OL_INPUT_FOLDER);
-  console.debug("Input directory cleared.");
-
-  // console.debug("Making client.folder.getItems API call on box raw folder");
-  //this creates the directory that can be navigated there will have to be two buttons one to add this to the array and one to move further in to a folder
-  displayFolder(firstFolder); 
+  // Get our input directory back to its original point
 }
 
 /* Takes in an array of Box File IDs, downloads them, lets the user Box them, then uploads them to Box. 
