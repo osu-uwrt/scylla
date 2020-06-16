@@ -77,4 +77,22 @@
   border: none;
   border-top: 1px black solid;
 }
+
+#currentFilePath {
+  padding-left: 15px;
+}
+
+#currentFilePath > .filePathEntry {
+  list-style-type: none;
+  display: inline-block;
+}
+
+#currentFilePath > .filePathEntry > div {
+  display: inline-block;
+  margin-right: 5px;
+}
+
+#currentFilePath > .filePathEntry > .filePathText {
+  text-decoration: underline;
+}
 /*# sourceMappingURL=box.css.map */

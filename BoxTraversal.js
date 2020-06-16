@@ -12,7 +12,8 @@
 module.exports = {
   getBoxingQueue: getBoxingQueue, 
   setClient: setClient, 
-  fillFromBaseFolder: fillFromBaseFolder
+  fillFromBaseFolder: fillFromBaseFolder, 
+  displayFolder: displayFolder
 }
 
 // Necessary imports 
@@ -46,9 +47,9 @@ let folderPath = [];
 document.getElementById("baseOfMyTree").addEventListener("contextmenu", () => {
   
   // If current page has a parent, adjust representation and render parent
-  if (currentFolder.parent !== null) {
+  if (currentFolder.info.parent !== null) {
     oneFolderUp(); 
-    displayFolder(currentFolder.parent.id);
+    displayFolder(currentFolder.info.parent.id);
   }
 });
 
@@ -66,6 +67,7 @@ function refreshHTML() {
 
     // Element that we actually put the folder id in 
     let filePathText = document.createElement("div");
+    filePathText.classList.toggle("filePathText");
     filePathText.textContent = elem.name; 
     filePathText.addEventListener("click", () => {
       shrinkArrToId(elem.id); 
@@ -78,6 +80,7 @@ function refreshHTML() {
 
     // Base list element that we'll append to 
     let li = document.createElement("li");
+    li.classList.toggle("filePathEntry");
     li.appendChild(filePathText); 
     li.appendChild(carat); 
 
@@ -110,25 +113,34 @@ function shrinkArrToId(id) {
 }
 
 // Fills our representation based on the first folder we open
-function fillFromBaseFolder(id, client) {
-  
-  // Get the current folder's information
-  client.folders.get(id) 
-  .then(info => {
+function fillFromBaseFolder(id) {
 
-    // Append to beginning of queue and unshift 
-    folderPath.unshift({ id: id, name: info.name });
+  return new Promise(resolve => {
+    // Get the current folder's information
+    client.folders.get(id) 
+    .then(info => {
 
-    // If it has a parent, recursively call on the parent 
-    if (info.parent !== null) {
-      fillFromBaseFolder(info.parent.id); 
-    } else {
-      // Means we got to top level... Nothing special to do here other than not recurse.
-    }
-  });
+      // Append to beginning of queue and unshift 
+      folderPath.unshift({ id: id, name: info.name });
+
+      // If it has a parent, recursively call on the parent 
+      if (info.parent !== null) {
+        resolve(fillFromBaseFolder(info.parent.id)); 
+      } else {
+        resolve(""); 
+        // Means we got to top level... Nothing special to do here other than update the HTML
+        refreshHTML();
+      }
+    });
+  }) 
 }
 
-function displayFolder(id) {
+async function displayFolder(id) {
+
+  // If this is the very first folder we are opening, update that before we open the page 
+  if (folderPath.length === 0) {
+    await fillFromBaseFolder(id); 
+  }
 
   // Already cached = Don't do a network request 
   if (FolderCache.folderIsCached(id)) {
@@ -149,12 +161,11 @@ function displayFolder(id) {
     client.folders.getItems(id).then(fItems => {
 
         // Update this "module"'s record of current page stuff
-        currentFolder.info = FolderCache.getPageInfo(id); 
-        currentFolder.items = FolderCache.getPageItems(id); 
+        currentFolder.info = fInfo; 
+        currentFolder.items = fItems; 
 
         // Add to cache
-        FolderCache.addInfoToCache(id, fInfo);
-        FolderCache.addItemsToCache(id, fItems);
+        FolderCache.addFolderToCache(id, fItems, fInfo); 
         
         // Actually do the rendering based off of the items we found 
         displayResultsOfNetworkRequest(fItems);
@@ -164,8 +175,6 @@ function displayFolder(id) {
 }
 
 function displayResultsOfNetworkRequest(items) {
-
-  console.log("Displaying following object: ", items);
 
   // Get reference to base and get rid of last folder we rendered
   let baseOfTree = document.getElementById("baseOfMyTree");

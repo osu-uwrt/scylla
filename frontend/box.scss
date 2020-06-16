@@ -86,3 +86,22 @@
     border: none;
     border-top: 1px black solid;
 }
+
+#currentFilePath {
+
+  padding-left: 15px;
+  > .filePathEntry {
+
+    list-style-type: none;
+    display: inline-block;
+
+    > div {
+      display: inline-block;
+      margin-right: 5px;
+    }
+
+    > .filePathText {
+      text-decoration: underline; 
+    }
+  }
+}

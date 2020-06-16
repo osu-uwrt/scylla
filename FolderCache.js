@@ -21,24 +21,13 @@ function folderIsCached(id) {
   return cachedPages.has(id);
 }
 
-function addItemsToCache(id, items) {
-
-  console.log("Adding items for id " + id + " to cache.");
-
-  // If we already have some sort of object linked to the id, we modify that one and set it. Otherwise we modify an empty object and set it. 
+function addFolderToCache(id, itemsParam, infoParam) {
+  
+  console.log("Adding folder id " + id + " to cache.");
   let obj = folderIsCached(id) ? cachedPages.get(id) : {}; 
-  obj.items = items; 
-  cachedPages.set(id, obj); 
-}
-
-function addInfoToCache(id, info) {
-
-  console.log("Adding info for id " + id + " to cache.");
-
-  // If we already have some sort of object linked to the id, we modify that one and set it. Otherwise we modify an empty object and set it. 
-  let obj = folderIsCached(id) ? cachedPages.get(id) : {}; 
-  obj.info = info; 
-  cachedPages.set(id, obj); 
+  obj.items = itemsParam;
+  obj.info = infoParam; 
+  cachedPages.set(id, obj);  
 }
 
 function getPageItems(id) {
@@ -64,8 +53,7 @@ function getPageInfo(id) {
 }
 
 module.exports = {
-  addItemsToCache: addItemsToCache, 
-  addInfoToCache: addInfoToCache, 
+  addFolderToCache: addFolderToCache, 
   folderIsCached: folderIsCached, 
   getPageItems: getPageItems, 
   getPageInfo: getPageInfo

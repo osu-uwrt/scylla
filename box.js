@@ -62,7 +62,7 @@ function updateClassList() {
 async function launchOpenLabeling(baseDir) {
 
   // Change where we look for resources based on if we're developing or actually in a distribution package.
-  var baseDir = resolveBaseDir();
+  baseDir = resolveBaseDir();
   console.log("baseDir: " + baseDir);
 
   await updateClassList(baseDir); // Function is async because it relies on a file download, but 
@@ -83,7 +83,7 @@ async function launchOpenLabeling(baseDir) {
   olProcess.stderr.on("data", (chunk) => { console.log("stderr: " + chunk); });
   olProcess.on("close", (code) => {
     console.log("Child process exited with code " + code + ".");
-    uploadOutput();
+    // uploadOutput();
   });
 }
 
@@ -162,9 +162,8 @@ function login() {
   passes control to the function that launches OpenLabeling. */ 
 async function loginPostClient() {
 
-  // Box File Structure Traversal Setup 
+  // Box File Structure Traversal Setup
   BoxTraversal.setClient(client);
-  BoxTraversal.fillFromBaseFolder(BOX_BASE_FOLDERID);
   BoxTraversal.displayFolder(BOX_BASE_FOLDERID); 
 
   // Get our input directory back to its original point
@@ -224,11 +223,31 @@ function postExplorer(downloadIDs) {
   } 
 }
 
+// Performs `rm -rf` at the given file path 
+function clearDirectory(filePath) {
+  console.debug("Deleting everything in directory " + filePath);
+  rimraf.sync(path.join(filePath, "*"));
+  console.debug("Deleted everything in directory " + filePath);
+}
+
+// This function returns a path to our base directory, sensing whether we're in development or distribution
+// This is necessary for stuff to work properly when we're in a built version of the app, rather than just `yarn start` (development version)
+function resolveBaseDir() {
+  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
+    console.log("We are in the development environment!");
+    return __dirname;
+  } else {
+    console.log("We are in the distribution environment!");
+    return path.join(process.resourcesPath);
+  }
+}
+
 /* 
   1. Makes a folder with the name of the video on box if one doesn't exist 
   2. Goes into that folder 
   3. Uploads a zip file with both the individual video frames and their .txt throughput 
 */
+
 
 /* 
   Purpose: 
@@ -236,6 +255,7 @@ function postExplorer(downloadIDs) {
   2. Goes into that folder 
   3. Uploads a zip file with both the individual video frames and their .txt throughput 
 */
+/* 
 function uploadOutput() {
 
   // Iterate through each video's files 
@@ -391,14 +411,10 @@ function zipFiles(zipName, filePathsArr) {
   }); 
 }
 
-/* TODO: I merged a LOT of functions here, a lot will probably be overlaps */ 
 
-/* 
-  Returns an array of format 
-
-  [FirstFilledIntervalStart, FirstFilledIntervalEnd, SecondFilledIntervalStart, SecondFilledIntervalEnd, ...] 
-  given an actual video name. All the file paths are Scylla-specific, basically. 
-*/
+// Returns an array of format 
+// [FirstFilledIntervalStart, FirstFilledIntervalEnd, SecondFilledIntervalStart, SecondFilledIntervalEnd, ...] 
+// given an actual video name. All the file paths are Scylla-specific, basically. 
 function getFilledFrames(videoName) {
 
   // Gets list of files in that video's output directory 
@@ -488,18 +504,6 @@ function getFileType(fileName) {
     }
 }
 
-// This function returns a path to our base directory, sensing whether we're in development or distribution
-// This is necessary for stuff to work properly when we're in a built version of the app, rather than just `yarn start` (development version)
-function resolveBaseDir() {
-  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
-    console.log("We are in the development environment!");
-    return __dirname;
-  } else {
-    console.log("We are in the distribution environment!");
-    return path.join(process.resourcesPath);
-  }
-}
-
 function fileNameToTxt(fileName) {
   return fileName.substring(0, fileName.indexOf(".")) + ".txt";
 }
@@ -584,9 +588,5 @@ function getVideoNamesFromFilesObject(files) {
   }
 }
 
-// Performs `rm -rf` at the given file path 
-function clearDirectory(filePath) {
-  console.debug("Deleting everything in directory " + filePath);
-  rimraf.sync(path.join(filePath, "*"));
-  console.debug("Deleted everything in directory " + filePath);
-}
+
+*/
