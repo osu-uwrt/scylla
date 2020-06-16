@@ -37,8 +37,3 @@ Unless you are developing with a dev token (which is easy to set up, just google
 The version of OpenLabeling on this repo is basically the same as if you would have cloned it, but I've made some minor modifications, like changing some paths and making it use our localized Python installation. Hence, it is not a subrepository; We're essentially using a slightly customized version that we can make commits to and everythingn. 
 
 OpenLabeling is open source (github.com/Cartucho/OpenLabeling, I believe) and has a super permissive license that I think is basically just "do whatever". 
-
-
-### To-Do 
-
-Changes too much to warrant updating on the README itself. If the project gets to a point where any new features would be a very large effort or the project is in need of an overhaul, this may happen. 
