@@ -125,7 +125,11 @@ async function fillFromBaseFolder(id) {
 
   // Wait for the network requests that give us our current folder's information 
   let folder = await getFolder(id); 
-  FolderCache.addFolderToCache(folder.id, folder.info, folder.items); 
+
+  if (!FolderCache.folderIsCached(id)) {
+    FolderCache.addFolderToCache(folder.id, folder.info, folder.items); 
+  }
+  
   folderPath.unshift({ id: folder.id, name: folder.info.name }); 
 
   if (folder.info.parent !== null) {
