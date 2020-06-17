@@ -9,6 +9,7 @@
   {
     key: id, 
     value: {
+      id: <The id of the folder> 
       items: <Result of client.folders.getItems(id)>
       info: <Result of client.folders.get(id)>
     }
@@ -17,20 +18,22 @@
 
 let cachedPages = new Map();  
 
+
+
 function folderIsCached(id) {
   return cachedPages.has(id);
 }
 
-function addFolderToCache(id, itemsParam, infoParam) {
+function addFolderToCache(id, pInfo, pItems) {
   
-  console.log("Adding folder id " + id + " to cache.");
+  console.log("Adding folder " + pInfo.name + " to cache.");
   let obj = folderIsCached(id) ? cachedPages.get(id) : {}; 
-  obj.items = itemsParam;
-  obj.info = infoParam; 
+  obj.info = pInfo; 
+  obj.items = pItems;
   cachedPages.set(id, obj);  
 }
 
-function getPageItems(id) {
+function getFolder(id) {
 
   // Technically a precondition b/c we theoretically never call this on non-cached folders but here to be sure 
   if (!folderIsCached(id)) {
@@ -38,24 +41,34 @@ function getPageItems(id) {
     return -1; 
   }
 
-  return cachedPages.get(id).items;
+  return cachedPages.get(id);
 }
 
-function getPageInfo(id) {
 
-  // Technically a precondition b/c we theoretically never call this on non-cached folders but here to be sure 
-  if (!folderIsCached(id)) {
-    console.error("Tried to get non-cached folder from cache!");
-    return -1; 
+/* Allows us to "lock" a folder id.
+  If it shows up in here, a network request is either currently out for that folder id, or that the folder is already cached. */ 
+let lockedIds = new Set(); 
+
+function lockId(id) {
+
+  // Theoretically we never try and lock a folder that's already locked, but here for redundancy 
+  if (lockedIds.has(id)) {
+    console.error("Tried to lock a file that was already locked!"); 
   }
 
-  return cachedPages.get(id).info; 
+  lockedIds.add(id); 
 }
+
+function idIsLocked(id) {
+  return lockedIds.has(id); 
+}
+
 
 module.exports = {
   addFolderToCache: addFolderToCache, 
   folderIsCached: folderIsCached, 
-  getPageItems: getPageItems, 
-  getPageInfo: getPageInfo
+  getFolder: getFolder,
+  lockId: lockId, 
+  idIsLocked: idIsLocked
 }
 

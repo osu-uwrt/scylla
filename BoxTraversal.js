@@ -32,6 +32,7 @@ function setClient(clientParam) {
 }
 
 // Tracks (references to) info object and items object of currently opened folder 
+// TODO: Either rename this, or change overall class functionality to remove ambiguity 
 var currentFolder = {}; 
 
 /* Format: 
@@ -48,6 +49,8 @@ document.getElementById("baseOfMyTree").addEventListener("contextmenu", () => {
   
   // If current page has a parent, adjust representation and render parent
   if (currentFolder.info.parent !== null) {
+
+    // Actually go up that one id 
     oneFolderUp(); 
     displayFolder(currentFolder.info.parent.id);
   }
@@ -106,8 +109,6 @@ function oneFolderDown(id, name) {
 }
 
 function shrinkArrToId(id) {
-  console.log("Shrinking object to id " + id); 
-  console.log("Starting Object: ", folderPath); 
   let atRightLevel = false; 
   while (!atRightLevel) {
     let removed = folderPath.pop(); 
@@ -117,103 +118,93 @@ function shrinkArrToId(id) {
     }
   }
   refreshHTML();
-  console.log("Ending Object: ", folderPath); 
 }
 
 // Fills our representation based on the first folder we open
-function fillFromBaseFolder(id) {
+async function fillFromBaseFolder(id) {
 
-  return new Promise(resolve => {
-    // Get the current folder's information
-    client.folders.get(id) 
-    .then(info => {
+  // Wait for the network requests that give us our current folder's information 
+  let folder = await getFolder(id); 
+  FolderCache.addFolderToCache(folder.id, folder.info, folder.items); 
+  folderPath.unshift({ id: folder.id, name: folder.info.name }); 
 
-      // Append to beginning of queue and unshift 
-      folderPath.unshift({ id: id, name: info.name });
+  if (folder.info.parent !== null) {
+    fillFromBaseFolder(folder.info.parent.id); 
+  } else {
+    refreshHTML(); 
+  }
+}
 
-      // If it has a parent, recursively call on the parent 
-      if (info.parent !== null) {
-        resolve(fillFromBaseFolder(info.parent.id)); 
-      } else {
-        resolve(""); 
-        // Means we got to top level... Nothing special to do here other than update the HTML
-        refreshHTML();
-      }
-    });
-  }) 
+function precacheFolder(folder) {
+  folder.items.entries.forEach(item => {
+    if (item.type === "folder") {
+      getFolder(item.id); 
+    }
+  });
+}
+
+// Returns object with items, id, and info for a specific folder. 
+// Will handle locking and caching whatever it gets 
+// By design, does NOT handle precaching or rendering. If we want to do precaching we'd have to do a lot of weird stuff to avoid only recursing one level, and rendering doesn't belong here because we have a lot of cases (i.e. precaching) where we just want to get folder information, not necessarily put it up on screen. 
+function getFolder(id) {
+
+  // If it's cached, get from folder, otherwise if it isn't locked (meaning a request is in the works) do the request 
+  return new Promise(resolve => {    
+    if (FolderCache.folderIsCached(id)) {
+      resolve(FolderCache.getFolder(id)); 
+    } else if (!FolderCache.idIsLocked(id)) {
+      FolderCache.lockId(id); 
+      Promise.all([client.folders.get(id), client.folders.getItems(id)])
+      .then(arr => {
+        FolderCache.addFolderToCache(id, arr[0], arr[1]); 
+        resolve({ id: id, info: arr[0], items: arr[1] }); 
+      });
+    }
+    else {
+      resolve(); 
+    }
+  }); 
 }
 
 async function displayFolder(id) {
 
   // If this is the very first folder we are opening, update that before we open the page 
   if (folderPath.length === 0) {
+
+    // Fill our base tree and precache all our parents up to root 
     await fillFromBaseFolder(id); 
-  }
 
-  // Already cached = Don't do a network request 
-  if (FolderCache.folderIsCached(id)) {
+    // Do everything for our base folder (if there isn't already a separate request out there for it) 
+    let folder = await getFolder(id); 
+    if (folder === null) {
+      return; 
+    }
 
-    // Update current page records 
-    currentFolder.info = FolderCache.getPageInfo(id); 
-    currentFolder.items = FolderCache.getPageItems(id); 
-
-    // Theoretically if it makes it in this block we're already at least starting preloading all of this, but extra redundancy is good for testing
-    currentFolder.items.entries.forEach(item => {
-      if (item.type === "folder") {
-        cacheID(item.id); 
-      }
-    });
-
-    // Actually render the page
-    let folderItems = FolderCache.getPageItems(id); 
-    displayResultsOfNetworkRequest(folderItems);
-  }
-
-  // Otherwise, we network request for it 
-  // There's no need to do any actual code until we get both the info and the items. You could technically make a case for a very minor performance increase but these all take completely negligible amounts of time. 
-  else {
-    client.folders.get(id).then(fInfo => {
-      client.folders.getItems(id).then(fItems => {
-
-        // Update this "module"'s record of current page stuff
-        currentFolder.info = fInfo; 
-        currentFolder.items = fItems; 
-
-        // Add to cache
-        FolderCache.addFolderToCache(id, fItems, fInfo); 
-
-        // Preload (put into cache so it's instant when we want to retrieve it) every folder that's in this folder. Helps a TON with making the whole thing not feel sluggish. 
-        // I would normally be antsy about the number of API calls here but it's really no more than like 5-10 per folder and will generally be even less than that. 
-        fItems.entries.forEach(item => {
-          if (item.type === "folder") {
-            cacheID(item.id); 
-          }
-        });
-        
-        // Actually do the rendering based off of the items we found 
-        displayResultsOfNetworkRequest(fItems);
-      });    
-    });  
-  }
-}
-
-// Function that retrieves and caches a specific ID without actually displaying it. Used for preloading. 
-function cacheID(id) {
-
-  // If this folder is already cached, just get out of here 
-  if (FolderCache.folderIsCached(id)) {
+    precacheFolder(await getFolder(id));    
+    displayResultsOfNetworkRequest(folder.items); 
     return; 
   }
 
-  // Otherwise, we have to do the network request and cache whatever we get. 
-  // TODO: Implement basic "lock by id" system that makes sure we aren't downloading the same folder at the same time twice. Really easy to do; Just keep a map that maps the id to a boolean on if it's currently at least in the process of being downloaded. 
-  client.folders.get(id).then(fInfo => {
-    client.folders.getItems(id).then(fItems => {
-      FolderCache.addFolderToCache(id, fItems, fInfo);
-    });    
-  });  
+  // Otherwise, it's a normal folder that we handle normally 
+  // Get actual folder contents and start precaching the contents of it 
+  let folder = await getFolder(id);
+
+  // If it's null here that means there was another network request going on and we should get out of here
+  if (folder === null) {
+    return;
+  }
+
+  precacheFolder(folder); 
+
+  // Update the class's record of what the current folder looks like 
+  currentFolder.info = folder.info; 
+  currentFolder.items = folder.items; 
+
+  // Actually render everything 
+  displayResultsOfNetworkRequest(folder.items); 
 }
 
+// Gritty HTML DOM stuff to display the items object 
 function displayResultsOfNetworkRequest(items) {
 
   // Get reference to base and get rid of last folder we rendered
