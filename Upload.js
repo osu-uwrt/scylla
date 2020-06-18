@@ -3,7 +3,8 @@ var archiver = require("archiver"); // Needed to make .zip files
 var orderBy = require("natural-orderby"); // Needed for "human" sorting 
 var fs = require("fs"); // Needed for basically everything, we do a lot of file system work 
 var path = require("path"); // Same reasoning as above 
-var rimraf = require("rimraf");
+
+var { updateStatus, clearDirectory, resolveBaseDir } = require("./Utility");
 
 // Need an instance of client inside this "class" as well to do the uploading 
 let client; 
@@ -190,11 +191,4 @@ function getFilledFrames(videoName) {
   }
 
   return framesArr;
-}
-
-// Performs `rm -rf` at the given file path 
-function clearDirectory(filePath) {
-  console.debug("Deleting everything in directory " + filePath);
-  rimraf.sync(path.join(filePath, "*"));
-  console.debug("Deleted everything in directory " + filePath);
 }

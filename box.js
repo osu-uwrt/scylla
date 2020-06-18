@@ -15,6 +15,7 @@ var fs = require("fs");
 // Other custom JS files that we want code from 
 var BoxTraversal = require("./BoxTraversal");
 var Upload = require("./Upload");
+var { updateStatus, clearDirectory, resolveBaseDir } = require("./Utility");
 
 //* Global Variables (otherwise we'd pass them around EVERYWHERE)
 const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
@@ -252,29 +253,4 @@ async function launchOpenLabeling(baseDir) {
     Upload.setClient(client);
     Upload.start();
   });
-}
-
-// TODO: Move the below three functions to their own file,, preferably utility.js. Splitting files up *if they have global variables* can be problematic, but it's fine if they are just functions.
-
-function updateStatus(statusMessage) {
-  document.getElementById("status").textContent = "Status: " + statusMessage;
-}
-
-// Performs `rm -rf` at the given file path 
-function clearDirectory(filePath) {
-  console.debug("Deleting everything in directory " + filePath);
-  rimraf.sync(path.join(filePath, "*"));
-  console.debug("Deleted everything in directory " + filePath);
-}
-
-// This function returns a path to our base directory, sensing whether we're in development or distribution
-// This is necessary for stuff to work properly when we're in a built version of the app, rather than just `yarn start` (development version)
-function resolveBaseDir() {
-  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
-    console.log("We are in the development environment!");
-    return __dirname;
-  } else {
-    console.log("We are in the distribution environment!");
-    return path.join(process.resourcesPath);
-  }
 }
