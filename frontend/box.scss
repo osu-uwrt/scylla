@@ -105,3 +105,20 @@
     }
   }
 }
+
+.rightContainerTopContainer {
+  button, ul {
+    display: inline-block;
+  }
+
+  button {
+    background-color: #222222;
+    border: 1px white solid; 
+    margin-left: 10px;
+  }
+
+  button:focus {
+    outline: none; 
+    box-shadow: none;
+  }
+}

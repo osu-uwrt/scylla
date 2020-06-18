@@ -18,19 +18,15 @@
 
 let cachedPages = new Map();  
 
-
-
 function folderIsCached(id) {
   return cachedPages.has(id);
 }
 
-function addFolderToCache(id, pInfo, pItems) {
+function addOrUpdateFolderToCache(pId, pInfo, pItems) {
   
-  console.log("Adding folder " + pInfo.name + " to cache.");
-  let obj = folderIsCached(id) ? cachedPages.get(id) : {}; 
-  obj.info = pInfo; 
-  obj.items = pItems;
-  cachedPages.set(id, obj);  
+  console.log("Adding or updating folder " + pInfo.name + " to cache.");
+  let obj = { id: pId, info: pInfo, items: pItems }; 
+  cachedPages.set(pId, obj);  
 }
 
 function getFolder(id) {
@@ -43,7 +39,6 @@ function getFolder(id) {
 
   return cachedPages.get(id);
 }
-
 
 /* Allows us to "lock" a folder id.
   If it shows up in here, a network request is either currently out for that folder id, or that the folder is already cached. */ 
@@ -59,16 +54,26 @@ function lockId(id) {
   lockedIds.add(id); 
 }
 
+function unlockId(id) {
+  
+  if (!lockedIds.has(id)) {
+    console.error("Tried to unlock a file that wasn't locked!"); 
+  }
+
+  lockedIds.delete(id); 
+}
+
 function idIsLocked(id) {
   return lockedIds.has(id); 
 }
 
 
 module.exports = {
-  addFolderToCache: addFolderToCache, 
+  addOrUpdateFolderToCache: addOrUpdateFolderToCache, 
   folderIsCached: folderIsCached, 
   getFolder: getFolder,
   lockId: lockId, 
+  unlockId: unlockId, 
   idIsLocked: idIsLocked
 }
 

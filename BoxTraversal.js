@@ -56,6 +56,12 @@ document.getElementById("baseOfMyTree").addEventListener("contextmenu", () => {
   }
 });
 
+// Refresh button 
+document.getElementById("refreshButton").addEventListener("click", async () => {
+  let folder = await updateFolder(currentFolder.id); 
+  displayResultsOfNetworkRequest(folder); 
+});
+
 // Updates the HTML display to reflect whatever our representation says our current state is 
 function refreshHTML() {
 
@@ -153,19 +159,43 @@ function precacheFolder(folder) {
 function getFolder(id) {
 
   // If it's cached, get from folder, otherwise if it isn't locked (meaning a request is in the works) do the request 
-  return new Promise(resolve => {    
+  return new Promise((resolve, reject) => {    
     if (FolderCache.folderIsCached(id)) {
       resolve(FolderCache.getFolder(id)); 
     } else if (!FolderCache.idIsLocked(id)) {
       FolderCache.lockId(id); 
       Promise.all([client.folders.get(id), client.folders.getItems(id)])
       .then(arr => {
-        FolderCache.addFolderToCache(id, arr[0], arr[1]); 
+        FolderCache.addOrUpdateFolderToCache(id, arr[0], arr[1]); 
+        FolderCache.unlockId(id); 
         resolve({ id: id, info: arr[0], items: arr[1] }); 
-      });
+      })
+      .catch((err) => {
+        reject(err); 
+      })
     }
     else {
       resolve(); 
+    }
+  }); 
+}
+
+// Essentially a specialized version of getFolder that ignores if it's already cached and always updates the cache 
+// Used only to refresh a page 
+function updateFolder(id) {
+  console.log("Made it here!");
+  return new Promise((resolve, reject) => {
+    if (!FolderCache.idIsLocked(id)) {
+      FolderCache.lockId(id); 
+      Promise.all([client.folders.get(id), client.folders.getItems(id)])
+      .then(arr => {
+        FolderCache.addOrUpdateFolderToCache(id, arr[0], arr[1]); 
+        FolderCache.unlockId(id); 
+        resolve({ id: id, info: arr[0], items: arr[1] });
+      })
+      .catch((err) => {
+        reject(err); 
+      });
     }
   }); 
 }
@@ -184,32 +214,29 @@ async function displayFolder(id) {
       return; 
     }
 
-    precacheFolder(await getFolder(id));    
-    displayResultsOfNetworkRequest(folder.items); 
+    precacheFolder(folder);    
+    displayResultsOfNetworkRequest(folder); 
     return; 
   }
 
   // Otherwise, it's a normal folder that we handle normally 
   // Get actual folder contents and start precaching the contents of it 
   let folder = await getFolder(id);
-
-  // If it's null here that means there was another network request going on and we should get out of here
   if (folder === null) {
     return;
   }
 
+  // Start caching the folders in it and display it 
   precacheFolder(folder); 
-
-  // Update the class's record of what the current folder looks like 
-  currentFolder.info = folder.info; 
-  currentFolder.items = folder.items; 
-
-  // Actually render everything 
-  displayResultsOfNetworkRequest(folder.items); 
+  displayResultsOfNetworkRequest(folder); 
 }
 
 // Gritty HTML DOM stuff to display the items object 
-function displayResultsOfNetworkRequest(items) {
+function displayResultsOfNetworkRequest(folder) {
+
+  console.log("Setting currentFolder to ", folder);
+  currentFolder = folder;
+  let items = folder.items; 
 
   // Get reference to base and get rid of last folder we rendered
   let baseOfTree = document.getElementById("baseOfMyTree");

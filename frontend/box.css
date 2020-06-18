@@ -95,4 +95,20 @@
 #currentFilePath > .filePathEntry > .filePathText {
   text-decoration: underline;
 }
+
+.rightContainerTopContainer button, .rightContainerTopContainer ul {
+  display: inline-block;
+}
+
+.rightContainerTopContainer button {
+  background-color: #222222;
+  border: 1px white solid;
+  margin-left: 10px;
+}
+
+.rightContainerTopContainer button:focus {
+  outline: none;
+  -webkit-box-shadow: none;
+          box-shadow: none;
+}
 /*# sourceMappingURL=box.css.map */
