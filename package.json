@@ -23,20 +23,20 @@
   },
   "homepage": "https://github.com/aacitelli/Scylla#readme",
   "dependencies": {
-    "archiver": "^3.1.1",
+    "archiver": "^4.0.1",
     "box-node-sdk": "^1.31.0",
     "box-ui-elements": "^11.0.2",
     "glob": "^7.1.6",
     "natural-orderby": "^2.0.3",
     "ncp": "^2.0.0",
     "node-fetch": "^2.6.0",
-    "python-shell": "^1.0.8",
+    "python-shell": "^2.0.1",
     "rimraf": "^3.0.2"
   },
   "devDependencies": {
-    "electron": "^7.1.14",
-    "electron-builder": "^22.4.1",
-    "eslint": "^6.8.0"
+    "electron": "^9.0.4",
+    "electron-builder": "^22.7.0",
+    "eslint": "^7.2.0"
   },
   "build": {
     "appId": "com.osuuwrt.scylla",
