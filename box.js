@@ -249,6 +249,7 @@ async function launchOpenLabeling(baseDir) {
   olProcess.stderr.on("data", (chunk) => { console.log("stderr: " + chunk); });
   olProcess.on("close", (code) => {
     console.log("Child process exited with code " + code + ".");
+    Upload.setClient(client);
     Upload.start();
   });
 }
