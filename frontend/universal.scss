@@ -118,6 +118,15 @@ body {
         width: 100%;
         padding: 0 10px;
         box-sizing: border-box;
+
+        h3 > {
+          margin-bottom: 0;
+        }
+
+        a {
+          color: white;
+          font-size: 14px;
+        }
     }
 
     > #processInformation {

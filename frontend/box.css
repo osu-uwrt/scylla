@@ -3,7 +3,7 @@
   padding-left: 0;
   margin: 0;
   width: calc(100% - 300px);
-  height: calc(100% - 50px);
+  height: calc(100% - 70px);
   overflow-y: auto;
 }
 
@@ -45,7 +45,7 @@
   padding-left: 10px;
   -webkit-box-sizing: border-box;
           box-sizing: border-box;
-  height: calc(100% - 50px);
+  height: 100%;
   overflow-y: hidden;
   background-color: #BD0000;
 }
@@ -67,9 +67,9 @@
 
 #boxSelectedButton {
   position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
+  left: 15px;
+  bottom: 15px;
+  width: calc(100% - 300px - 30px);
   height: 50px;
   background-color: #9B0000;
   color: white;
@@ -78,26 +78,14 @@
   border-top: 1px black solid;
 }
 
-#currentFilePath {
-  padding-left: 15px;
-}
-
-#currentFilePath > .filePathEntry {
-  list-style-type: none;
-  display: inline-block;
-}
-
-#currentFilePath > .filePathEntry > div {
-  display: inline-block;
-  margin-right: 5px;
-}
-
-#currentFilePath > .filePathEntry > .filePathText {
-  text-decoration: underline;
+.rightContainerTopContainer {
+  height: 50px;
+  width: calc(100% - 300px);
 }
 
 .rightContainerTopContainer button, .rightContainerTopContainer ul {
   display: inline-block;
+  vertical-align: middle;
 }
 
 .rightContainerTopContainer button {
@@ -110,5 +98,27 @@
   outline: none;
   -webkit-box-shadow: none;
           box-shadow: none;
+}
+
+.rightContainerTopContainer #currentFilePath {
+  padding-left: 15px;
+  max-width: calc(100% - 100px);
+  overflow-x: hidden;
+}
+
+.rightContainerTopContainer #currentFilePath > .filePathEntry {
+  list-style-type: none;
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+.rightContainerTopContainer #currentFilePath > .filePathEntry > div {
+  display: inline-block;
+  margin-right: 5px;
+}
+
+.rightContainerTopContainer #currentFilePath > .filePathEntry > .filePathText {
+  text-decoration: underline;
 }
 /*# sourceMappingURL=box.css.map */

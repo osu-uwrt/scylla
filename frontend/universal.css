@@ -108,6 +108,15 @@ body {
           box-sizing: border-box;
 }
 
+#navbar > #navbarTextContent h3 > {
+  margin-bottom: 0;
+}
+
+#navbar > #navbarTextContent a {
+  color: white;
+  font-size: 14px;
+}
+
 #navbar > #processInformation {
   position: absolute;
   left: 10px;

@@ -126,7 +126,7 @@ document.getElementById("boxSelectedButton").addEventListener("click", () => {
 function postExplorer(downloadIDs) {
 
   let numFilesDownloaded = 0; // Number of files that network requests have completed. 
-
+  updateStatus("Downloading all the files...");
   console.debug("Downloading all of the following ids: " + downloadIDs); 
 
   // Iterate through each ID that we have to download 
@@ -227,6 +227,8 @@ async function loginPostClient() {
   When done, passes control to the function that uploads the results. 
 */ 
 async function launchOpenLabeling(baseDir) {
+
+  updateStatus("Launching OpenLabeling.");
 
   // Change where we look for resources based on if we're developing or actually in a distribution package.
   baseDir = resolveBaseDir();

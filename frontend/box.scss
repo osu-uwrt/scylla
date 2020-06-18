@@ -2,8 +2,8 @@
     list-style-type: none;
     padding-left: 0;
     margin: 0;
-    width: calc(100% - 300px);
-    height: calc(100% - 50px);
+    width: calc(100% - 300px); // 300px for the queue
+    height: calc(100% - 70px); // 50px button + 10px top margin + 10px bottom margin 
     overflow-y: auto;
 }
 
@@ -50,7 +50,7 @@
     padding-left: 10px;
     box-sizing: border-box;
 
-    height: calc(100% - 50px);
+    height: 100%;
     overflow-y: hidden;
 
     background-color: #BD0000;
@@ -76,9 +76,9 @@
  
 #boxSelectedButton {
     position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 100%;
+    left: 15px;
+    bottom: 15px;
+    width: calc(100% - 300px - 30px); // 300px for the queue, 20px for horiz. margin
     height: 50px;
     background-color: #9B0000;
     color: white;
@@ -87,28 +87,10 @@
     border-top: 1px black solid;
 }
 
-#currentFilePath {
-
-  padding-left: 15px;
-  > .filePathEntry {
-
-    list-style-type: none;
-    display: inline-block;
-
-    > div {
-      display: inline-block;
-      margin-right: 5px;
-    }
-
-    > .filePathText {
-      text-decoration: underline; 
-    }
-  }
-}
-
 .rightContainerTopContainer {
   button, ul {
     display: inline-block;
+    vertical-align: middle;
   }
 
   button {
@@ -120,5 +102,32 @@
   button:focus {
     outline: none; 
     box-shadow: none;
+  }
+
+  height: 50px;
+  width: calc(100% - 300px);
+
+  #currentFilePath {
+
+    padding-left: 15px;
+    > .filePathEntry {
+  
+      list-style-type: none;
+      display: inline-block;
+      vertical-align: middle;
+      font-size: 14px;
+  
+      > div {
+        display: inline-block;
+        margin-right: 5px;
+      }
+  
+      > .filePathText {
+        text-decoration: underline; 
+      }
+    }
+  
+    max-width: calc(100% - 100px); // The 42px is for the refresh button, and hardcoding the other number to something approximately correct is fine b/c this is a single page application
+    overflow-x: hidden; 
   }
 }

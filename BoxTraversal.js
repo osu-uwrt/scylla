@@ -19,6 +19,7 @@ module.exports = {
 // Necessary imports 
 var FolderCache = require("./FolderCache");
 var BoxingQueue = require("./BoxingQueue");
+const { updateStatus } = require("./Utility");
 
 // Due to how this is organized, need to offer a way for the main file to get BoxingQueue stuff from this file 
 function getBoxingQueue() {
@@ -77,7 +78,15 @@ function refreshHTML() {
     // Element that we actually put the folder id in 
     let filePathText = document.createElement("div");
     filePathText.classList.toggle("filePathText");
-    filePathText.textContent = folderPath[i].name; 
+
+    // Overlapping onto the second line doesn't look awful, but by limiting this to a certain
+    // number of characters it looks cleaner and we get to overflow less often
+    if (folderPath[i].name.length <= 12) {
+      filePathText.textContent = folderPath[i].name; 
+    } else {
+      filePathText.textContent = folderPath[i].name.substring(0, 10) + "...";
+    }
+    
     filePathText.addEventListener("click", () => {
       shrinkArrToId(folderPath[i].id); 
       displayFolder(folderPath[i].id);
@@ -183,10 +192,10 @@ function getFolder(id) {
 // Essentially a specialized version of getFolder that ignores if it's already cached and always updates the cache 
 // Used only to refresh a page 
 function updateFolder(id) {
-  console.log("Made it here!");
   return new Promise((resolve, reject) => {
     if (!FolderCache.idIsLocked(id)) {
       FolderCache.lockId(id); 
+      updateStatus("Refreshing folder...");
       Promise.all([client.folders.get(id), client.folders.getItems(id)])
       .then(arr => {
         FolderCache.addOrUpdateFolderToCache(id, arr[0], arr[1]); 
@@ -206,6 +215,7 @@ async function displayFolder(id) {
   if (folderPath.length === 0) {
 
     // Fill our base tree and precache all our parents up to root 
+    updateStatus("Loading; Please wait.");
     await fillFromBaseFolder(id); 
 
     // Do everything for our base folder (if there isn't already a separate request out there for it) 
@@ -221,6 +231,7 @@ async function displayFolder(id) {
 
   // Otherwise, it's a normal folder that we handle normally 
   // Get actual folder contents and start precaching the contents of it 
+  updateStatus("Loading folder; Please wait.");
   let folder = await getFolder(id);
   if (folder === null) {
     return;
@@ -235,6 +246,7 @@ async function displayFolder(id) {
 function displayResultsOfNetworkRequest(folder) {
 
   console.log("Setting currentFolder to ", folder);
+  updateStatus("Waiting for user selection.");
   currentFolder = folder;
   let items = folder.items; 
 

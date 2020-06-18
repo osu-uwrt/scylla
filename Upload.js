@@ -33,7 +33,11 @@ const OL_OUTPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "ou
 //   Zip those files into a zip with the correct name, and save it to the filesystem. 
 //   Upload that output to a specified box folder, creating a folder for that video if it doesn't already exist. 
 module.exports.start = start; 
+var numFilesFinishedUploading, numBoxedVideos;
 function start() {
+
+  numFilesFinishedUploading = 0; 
+  updateStatus("Uploading files to Box.");
 
   // Iterate through each video that we labeled
   videoNames.forEach(videoName => {
@@ -77,11 +81,14 @@ function start() {
   });
 }
 
+
 async function zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames, videoName, zipPath) {
 
   // If we didn't label anything in that file, get out of here 
   if (filesToUpload.length === 0) {
     return; 
+  } else {
+    numBoxedVideos++; 
   }
 
   console.log("videoName: " + videoName);
@@ -122,6 +129,10 @@ async function zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames
     client.files.uploadFile(BOX_OUTPUT_FOLDERID, endZipUploadName, stream)
     .then(file => {
       console.log("Finished uploading file ", file); 
+      numFilesFinishedUploading++; 
+      if (numFilesFinishedUploading === videoNames.length) {
+        updateStatus("Done uploading files. Good to exit.");
+      }
     });
   }); 
 
