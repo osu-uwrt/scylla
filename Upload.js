@@ -60,9 +60,11 @@ function start() {
 
       // Loop through the actual frames [start, end] from the original video 
       for (let currentFrameNumber = currentStart; currentFrameNumber <= currentEnd; currentFrameNumber++) {
+        console.log("Adding file at path " + path.join(OL_INPUT_FOLDER, videoName.replace(".", "_"), inputFiles[currentFrameNumber]) + "to be uploaded.");
         filesToUpload = filesToUpload.concat(path.join(OL_INPUT_FOLDER, videoName.replace(".", "_"), inputFiles[currentFrameNumber]));
         filesToUploadNames = filesToUploadNames.concat(inputFiles[currentFrameNumber]);
 
+        console.log("Adding file at path " + path.join(OL_OUTPUT_FOLDER, videoName.replace(".", "_"), outputFiles[currentFrameNumber]) + "to be uploaded.");
         filesToUpload = filesToUpload.concat(path.join(OL_OUTPUT_FOLDER, videoName.replace(".", "_"), outputFiles[currentFrameNumber]));
         filesToUploadNames = filesToUploadNames.concat(outputFiles[currentFrameNumber]);
       }
@@ -75,7 +77,7 @@ function start() {
   });
 }
 
-function zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames, videoName, zipPath) {
+async function zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames, videoName, zipPath) {
 
   // If we didn't label anything in that file, get out of here 
   if (filesToUpload.length === 0) {
@@ -83,6 +85,8 @@ function zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames, vide
   }
 
   console.log("videoName: " + videoName);
+  console.log("filesToUpload: ", filesToUpload); 
+  console.log("filesToUploadNames: ", filesToUploadNames);
   console.log("zipPath: " + zipPath);
   console.log("filledFrames: ", filledFrames); 
 
@@ -106,6 +110,19 @@ function zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames, vide
   output.on("close", function() {
     console.log(archive.pointer() + " total bytes"); 
     console.log('archiver has been finalized and the output file descriptor has closed.');
+
+    // Only clear the output directory after I make the .zip file
+    // TODO: Should probably move the "clear my output directory" to when we initially open OpenLabeling, or make it when we initially open the directory 
+    // clearDirectory(path.join(OL_OUTPUT_FOLDER, videoName.replace(".", "_")));
+
+    // TODO: This just uploads everything we do here to a single folder, even if we just bboxed individual files. Have this automatically make folders for each video, putting the .zip in the correct folder. 
+    // Actually upload the .zip file we just made
+    console.log("About to upload zip of name " + endZipUploadName + " at path " + endZipFilePath);
+    var stream = fs.createReadStream(endZipFilePath);
+    client.files.uploadFile(BOX_OUTPUT_FOLDERID, endZipUploadName, stream)
+    .then(file => {
+      console.log("Finished uploading file ", file); 
+    });
   }); 
 
   // good practice to catch this error explicitly
@@ -120,20 +137,7 @@ function zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames, vide
     archive.file(filesToUpload[i], { name: filesToUploadNames[i] });
   }
 
-  archive.finalize();
-
-  // Only clear the output directory after I make the .zip file
-  // TODO: Should probably move the "clear my output directory" to when we initially open OpenLabeling, or make it when we initially open the directory 
-  clearDirectory(path.join(OL_OUTPUT_FOLDER, videoName.replace(".", "_")));
-
-  // TODO: This just uploads everything we do here to a single folder, even if we just bboxed individual files. Have this automatically make folders for each video, putting the .zip in the correct folder. 
-  // Actually upload the .zip file we just made
-  console.log("About to upload zip of name " + endZipUploadName);
-  var stream = fs.createReadStream(endZipFilePath);
-  client.files.uploadFile(BOX_OUTPUT_FOLDERID, endZipUploadName, stream)
-  .then(file => {
-    console.log("Finished uploading file w/ name " + file.name);
-  });
+  archive.finalize();  
 }
 
 // Returns an array of format 
