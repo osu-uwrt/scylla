@@ -40,16 +40,9 @@
   },
   "build": {
     "appId": "com.osuuwrt.scylla",
-    "extraResources": [
-      "./extraResources/**"
-    ],
-    "files": [
-      "**/*",
-      "./icon.png",
-      "./extraResources"
-    ],
+    "asar": true, 
     "linux": {
-      "category": "Graphics",
+      "icon": "icon.png", 
       "target": [
         "deb"
       ]
