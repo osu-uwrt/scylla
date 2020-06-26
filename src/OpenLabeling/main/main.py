@@ -19,7 +19,7 @@ del sys.argv[1]
 print("os.path.abspath: " + str(os.path.abspath("./")))
 print("os.getcwd: " + str(os.getcwd()))
 
-sitePackagesAddress = os.path.join(basePath, "src", "site_packages")
+sitePackagesAddress = os.path.join(basePath, "site_packages")
 
 print("Looking for site_packages at this path: " + str(sitePackagesAddress))
 sys.path.append(sitePackagesAddress)

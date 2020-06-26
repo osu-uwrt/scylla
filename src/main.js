@@ -1,5 +1,13 @@
 // Imports 
 const { app, BrowserWindow } = require('electron');
+var process = require("process");
+
+// For whatever reason, __dirname is different from process.cwd(), so we need to change that 
+console.log("__dirname: " + __dirname); 
+console.log("process.cwd(): " + process.cwd()); 
+process.chdir("src"); 
+console.log("__dirname: " + __dirname); 
+console.log("process.cwd(): " + process.cwd()); 
 
 /* 
 require("electron-reload")(__dirname, {
@@ -20,6 +28,6 @@ app.on('ready', () =>
     }
   })
 
-  win.loadFile('./startup.html');  
+  win.loadFile("./src/startup.html");  
   win.maximize();
 });

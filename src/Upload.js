@@ -23,8 +23,8 @@ function appendToVideoNames(videoName) {
 
 // Important constants used in this class 
 const BOX_OUTPUT_FOLDERID = "105343099285"; 
-const OL_INPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "input");
-const OL_OUTPUT_FOLDER = path.join("extraResources", "OpenLabeling", "main", "output", "YOLO_darknet");
+const OL_INPUT_FOLDER = path.join("OpenLabeling", "main", "input");
+const OL_OUTPUT_FOLDER = path.join("OpenLabeling", "main", "output", "YOLO_darknet");
 
 // Sequence of things that need to happen here: 
 // For each video name: 
@@ -111,6 +111,7 @@ async function zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames
   endZipUploadName += ".zip";
 
   console.log("Name of Zip We're Uploading: " + endZipUploadName);
+  console.log("Uploading it to file path " + endZipFilePath);
   var output = fs.createWriteStream(endZipFilePath);
   var archive = archiver("zip", { zlib: { level: 9 } } );
 
