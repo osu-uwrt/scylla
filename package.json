@@ -2,7 +2,7 @@
   "name": "scylla",
   "version": "1.0.0",
   "description": "This is scylla!",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
@@ -40,9 +40,9 @@
   },
   "build": {
     "appId": "com.osuuwrt.scylla",
-    "asar": true, 
+    "asar": "true",
     "linux": {
-      "icon": "icon.png", 
+      "icon": "icon.png",
       "target": [
         "deb"
       ]
