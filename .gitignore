@@ -29,3 +29,4 @@ src/OpenLabeling/main/output/*
 
 # Development requisites that we don't want to bloat the repo with that are installed as part of setup 
 src/site_packages
+src/ZipFiles/*
