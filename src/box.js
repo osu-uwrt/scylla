@@ -17,9 +17,13 @@ var BoxTraversal = require("./BoxTraversal");
 var Upload = require("./Upload");
 var { updateStatus, clearDirectory, resolveBaseDir } = require("./Utility");
 
+// You're supposed to use this for anything involving relative file paths 
+// This works better cross-platform than trying to hack together a different system myself
+const baseDir = require("electron").remote.app.getAppPath()
+
 //* Global Variables (otherwise we'd pass them around EVERYWHERE)
-const OL_INPUT_FOLDER = path.join("OpenLabeling", "main", "input");
-const OL_OUTPUT_FOLDER = path.join("OpenLabeling", "main", "output", "YOLO_darknet");
+const OL_INPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "input");
+const OL_OUTPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "output");
 console.log("OL_INPUT_FOLDER: " + OL_INPUT_FOLDER); 
 console.log("OL_OUTPUT_FOLDER: " + OL_OUTPUT_FOLDER);
 const BOX_BASE_FOLDERID = "50377768738";
@@ -37,7 +41,7 @@ function updateClassList() {
       }
     
       // Write the file to OpenLabeling's input directory
-      var writeStream = fs.createWriteStream(path.join("OpenLabeling", "main", "class_list.txt"), "utf8");
+      var writeStream = fs.createWriteStream(path.join(baseDir, "src", "OpenLabeling", "main", "class_list.txt"), "utf8");
       stream.pipe(writeStream);
       stream.on("end", () => {
         resolve(""); // Don't need to return anything, but we have to return the promise 
@@ -52,6 +56,9 @@ function updateClassList() {
 var usingDevToken = true;
 login(); // Called when page loads
 function login() {
+
+  clearDirectory(OL_INPUT_FOLDER)
+  clearDirectory(OL_OUTPUT_FOLDER)
 
   updateStatus("Authenticating with Box.");
 
@@ -235,15 +242,18 @@ async function launchOpenLabeling(baseDir) {
 
   updateStatus("Launching OpenLabeling.");
 
-  // Change where we look for resources based on if we're developing or actually in a distribution package.
-  console.log("baseDir: " + baseDir);
+  // OpenLabeling doesn't automatically create this directory, so we do it here to be sure b/c I haven't been consistent with that
+  // We want this to be blocking so OpenLabeling doesn't start until we're finished with this
+  if (!fs.existsSync(path.join(baseDir, "src", "OpenLabeling", "main", "input"))) {
+    fs.mkdirSync(path.join(baseDir, "src", "OpenLabeling", "main", "input"))
+  }
 
   await updateClassList(baseDir); // Function is async because it relies on a file download, but 
   clearDirectory(path.join(OL_OUTPUT_FOLDER, "../")); // Get rid of existing output from the last time we ran 
-  clearDirectory(path.join(baseDir, "../ZipFiles"));
+  clearDirectory(path.join(baseDir, "ZipFiles"));
 
   // Figuring out where we launch OpenLabeling from 
-  var OLMainFilePath = path.resolve(path.join(baseDir, "OpenLabeling", "main", "main.py"));
+  var OLMainFilePath = path.resolve(path.join(baseDir, "src", "OpenLabeling", "main", "main.py"));
   console.log("Launching OpenLabeling from path " + OLMainFilePath);
 
   const PythonPath = "/usr/bin/python3";

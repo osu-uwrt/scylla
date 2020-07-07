@@ -40,11 +40,11 @@
   },
   "build": {
     "appId": "com.osuuwrt.scylla",
-    "asar": "true",
+    "asar": false,
     "linux": {
       "icon": "icon.png",
       "target": [
-        "deb"
+        "AppImage"
       ]
     }
   }

@@ -6,6 +6,8 @@ var path = require("path"); // Same reasoning as above
 
 var { updateStatus, clearDirectory, resolveBaseDir } = require("./Utility");
 
+const baseDir = require("electron").remote.app.getAppPath()
+
 // Need an instance of client inside this "class" as well to do the uploading 
 let client; 
 module.exports.setClient = setClient; 
@@ -23,8 +25,8 @@ function appendToVideoNames(videoName) {
 
 // Important constants used in this class 
 const BOX_OUTPUT_FOLDERID = "105343099285"; 
-const OL_INPUT_FOLDER = path.join("OpenLabeling", "main", "input");
-const OL_OUTPUT_FOLDER = path.join("OpenLabeling", "main", "output", "YOLO_darknet");
+const OL_INPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "input");
+const OL_OUTPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "output");
 
 // Sequence of things that need to happen here: 
 // For each video name: 
@@ -77,7 +79,7 @@ function start() {
       currentFilledFramesIndex += 2; 
     }
 
-    zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames, videoName, "ZipFiles");
+    zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames, videoName, path.join(baseDir, "ZipFiles"));
   });
 }
 

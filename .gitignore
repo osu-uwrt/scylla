@@ -11,6 +11,7 @@ config.js
 
 # production
 /build
+/dist
 
 # Default npm / electron .gitignore stuff 
 node_modules
@@ -30,3 +31,5 @@ src/OpenLabeling/main/output/*
 # Development requisites that we don't want to bloat the repo with that are installed as part of setup 
 src/site_packages
 src/ZipFiles/*
+
+scylla-v1.0.0.tgz

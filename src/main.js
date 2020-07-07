@@ -2,12 +2,8 @@
 const { app, BrowserWindow } = require('electron');
 var process = require("process");
 
-// For whatever reason, __dirname is different from process.cwd(), so we need to change that 
-console.log("__dirname: " + __dirname); 
-console.log("process.cwd(): " + process.cwd()); 
+// For whatever reason, __dirname is different from process.cwd(), so we need to make them the same, or else everything screws up 
 process.chdir("src"); 
-console.log("__dirname: " + __dirname); 
-console.log("process.cwd(): " + process.cwd()); 
 
 /* 
 require("electron-reload")(__dirname, {
