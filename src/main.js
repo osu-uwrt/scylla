@@ -2,9 +2,7 @@
 const { app, BrowserWindow } = require('electron');
 var process = require("process");
 
-// For whatever reason, __dirname is different from process.cwd(), so we need to make them the same, or else everything screws up 
-process.chdir("src"); 
-
+// This code snippet is great for testing front-end stuff; It's essentially live server, but for electron. You might have to install electron-reload.
 /* 
 require("electron-reload")(__dirname, {
   electron: require(`${__dirname}/node_modules/electron`)
