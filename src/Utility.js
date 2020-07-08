@@ -1,8 +1,4 @@
-module.exports = {
-  updateStatus: updateStatus, 
-  clearDirectory: clearDirectory,
-  resolveBaseDir: resolveBaseDir
-}
+let baseDir = require("electron").remote.app.getAppPath()
 
 function updateStatus(statusMessage) {
   document.getElementById("status").textContent = "Status: " + statusMessage;
@@ -17,14 +13,8 @@ function clearDirectory(filePath) {
   console.debug("Deleted everything in directory " + filePath);
 }
 
-// This function returns a path to our base directory, sensing whether we're in development or distribution
-// This is necessary for stuff to work properly when we're in a built version of the app, rather than just `yarn start` (development version)
-function resolveBaseDir() {
-  if (process.resourcesPath.endsWith("Scylla/node_modules/electron/dist/resources")) {
-    console.log("We are in the development environment!");
-    return __dirname;
-  } else {
-    console.log("We are in the distribution environment!");
-    return path.join(process.resourcesPath);
-  }
+module.exports = {
+  updateStatus: updateStatus, 
+  clearDirectory: clearDirectory,
+  baseDir: baseDir
 }

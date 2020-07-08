@@ -15,15 +15,11 @@ var fs = require("fs");
 // Other custom JS files that we want code from 
 var BoxTraversal = require("./BoxTraversal");
 var Upload = require("./Upload");
-var { updateStatus, clearDirectory, resolveBaseDir } = require("./Utility");
-
-// You're supposed to use this for anything involving relative file paths 
-// This works better cross-platform than trying to hack together a different system myself
-const baseDir = require("electron").remote.app.getAppPath()
+var { baseDir, updateStatus, clearDirectory } = require("./Utility");
 
 //* Global Variables (otherwise we'd pass them around EVERYWHERE)
 const OL_INPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "input");
-const OL_OUTPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "output");
+const OL_OUTPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "output", "YOLO_darknet");
 console.log("OL_INPUT_FOLDER: " + OL_INPUT_FOLDER); 
 console.log("OL_OUTPUT_FOLDER: " + OL_OUTPUT_FOLDER);
 const BOX_BASE_FOLDERID = "50377768738";
@@ -41,6 +37,7 @@ function updateClassList() {
       }
     
       // Write the file to OpenLabeling's input directory
+      console.log("Writing this file to " + path.join(baseDir, "src", "OpenLabeling", "main", "class_list.txt"))
       var writeStream = fs.createWriteStream(path.join(baseDir, "src", "OpenLabeling", "main", "class_list.txt"), "utf8");
       stream.pipe(writeStream);
       stream.on("end", () => {
@@ -57,6 +54,7 @@ var usingDevToken = true;
 login(); // Called when page loads
 function login() {
 
+  // Reset the app to its "base" state with clean folders and all that business 
   clearDirectory(OL_INPUT_FOLDER)
   clearDirectory(OL_OUTPUT_FOLDER)
 
@@ -121,6 +119,7 @@ function login() {
 
 // What actually triggers launching OpenLabeling 
 document.getElementById("boxSelectedButton").addEventListener("click", () => {
+  console.log("sfdasfjsdaf baseDir: " + baseDir)
   let ids = BoxTraversal.getBoxingQueue(); 
   if (ids.length === 0) {
     console.error("Tried to launch OpenLabeling with zero IDs to download!"); 
@@ -134,12 +133,19 @@ document.getElementById("boxSelectedButton").addEventListener("click", () => {
 // feeds them into OpenLabeling 
 function postExplorer(downloadIDs) {
 
+  // OpenLabeling doesn't automatically create this directory, so we do it here to be sure b/c I haven't been consistent with that
+  // We want this to be blocking so OpenLabeling doesn't start until we're finished with this
+  baseDir = require("electron").remote.app.getAppPath()
+  console.log("baseDir: " + baseDir)
+  console.log(OL_INPUT_FOLDER)
+  console.log(OL_OUTPUT_FOLDER)
+  if (!fs.existsSync(path.join(baseDir, "src", "OpenLabeling", "main", "input"))) {
+    fs.mkdirSync(path.join(baseDir, "src", "OpenLabeling", "main", "input"));
+  }
+
   let numFilesDownloaded = 0; // Number of files that network requests have completed. 
   updateStatus("Downloading all the files...");
   console.debug("Downloading all of the following ids: " + downloadIDs); 
-
-  var baseDir = resolveBaseDir();
-  console.log("baseDir: " + baseDir);
 
   // Iterate through each ID that we have to download 
   for (let i = 0; i < downloadIDs.length; i++) {
@@ -163,6 +169,7 @@ function postExplorer(downloadIDs) {
         console.log("Opened read stream to the object.");
   
         // Write the file to OpenLabeling's input directory
+        console.log("Writing this file to " + path.join(OL_INPUT_FOLDER, file.name))
         var output = fs.createWriteStream(path.join(OL_INPUT_FOLDER, file.name)); 
         console.log("Created write stream.");
         stream.pipe(output);
@@ -242,14 +249,8 @@ async function launchOpenLabeling(baseDir) {
 
   updateStatus("Launching OpenLabeling.");
 
-  // OpenLabeling doesn't automatically create this directory, so we do it here to be sure b/c I haven't been consistent with that
-  // We want this to be blocking so OpenLabeling doesn't start until we're finished with this
-  if (!fs.existsSync(path.join(baseDir, "src", "OpenLabeling", "main", "input"))) {
-    fs.mkdirSync(path.join(baseDir, "src", "OpenLabeling", "main", "input"))
-  }
-
   await updateClassList(baseDir); // Function is async because it relies on a file download, but 
-  clearDirectory(path.join(OL_OUTPUT_FOLDER, "../")); // Get rid of existing output from the last time we ran 
+  clearDirectory(path.join(OL_OUTPUT_FOLDER, "../")); // Get rid of everything inside the output directory. Our actual output directory is the YOLO_darknet subset, so we want one up from that
   clearDirectory(path.join(baseDir, "ZipFiles"));
 
   // Figuring out where we launch OpenLabeling from 

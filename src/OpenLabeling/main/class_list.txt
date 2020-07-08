@@ -1,0 +1,16 @@
+Bat: 0
+Batman: 1
+Crucifix: 2
+Cutie: 3
+Decap: 4
+Garlic: 5
+Gate: 6
+Groot: 7
+Heart: 8
+Oval: 9
+Path: 10
+Structure: 11
+Sunny: 12
+Wolf: 13
+Fairy: 14
+Pinger: 15

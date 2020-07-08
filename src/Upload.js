@@ -4,9 +4,7 @@ var orderBy = require("natural-orderby"); // Needed for "human" sorting
 var fs = require("fs"); // Needed for basically everything, we do a lot of file system work 
 var path = require("path"); // Same reasoning as above 
 
-var { updateStatus, clearDirectory, resolveBaseDir } = require("./Utility");
-
-const baseDir = require("electron").remote.app.getAppPath()
+var { baseDir, updateStatus, clearDirectory } = require("./Utility");
 
 // Need an instance of client inside this "class" as well to do the uploading 
 let client; 
@@ -26,7 +24,7 @@ function appendToVideoNames(videoName) {
 // Important constants used in this class 
 const BOX_OUTPUT_FOLDERID = "105343099285"; 
 const OL_INPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "input");
-const OL_OUTPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "output");
+const OL_OUTPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "output", "YOLO_darknet");
 
 // Sequence of things that need to happen here: 
 // For each video name: 
@@ -77,6 +75,11 @@ function start() {
 
       // We iterate two at a time... One begin index and one end index
       currentFilledFramesIndex += 2; 
+    }
+
+    // Writing will screw up if we don't make sure this directory exists 
+    if (!fs.existsSync(path.join(baseDir, "ZipFiles"))) {
+      fs.mkdirSync(path.join(baseDir, "ZipFiles"));
     }
 
     zipAndUploadFiles(filesToUpload, filesToUploadNames, filledFrames, videoName, path.join(baseDir, "ZipFiles"));
