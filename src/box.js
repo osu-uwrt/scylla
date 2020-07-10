@@ -18,12 +18,14 @@ var Upload = require("./Upload");
 var { baseDir, updateStatus, clearDirectory } = require("./Utility");
 
 //* Global Variables (otherwise we'd pass them around EVERYWHERE)
-const OL_INPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "input");
-const OL_OUTPUT_FOLDER = path.join(baseDir, "src", "OpenLabeling", "main", "output", "YOLO_darknet");
+const userDataDir = (electron.app || electron.remote.app).getPath("userData");
+const OL_INPUT_FOLDER = path.join(userDataDir, "input");
+const OL_OUTPUT_FOLDER = path.join(userDataDir, "output", "YOLO_darknet");
 console.log("OL_INPUT_FOLDER: " + OL_INPUT_FOLDER); 
 console.log("OL_OUTPUT_FOLDER: " + OL_OUTPUT_FOLDER);
 const BOX_BASE_FOLDERID = "50377768738";
 
+var classListLocation
 function updateClassList() {
 
   return new Promise((resolve, reject) => {
@@ -37,8 +39,9 @@ function updateClassList() {
       }
     
       // Write the file to OpenLabeling's input directory
-      console.log("Writing this file to " + path.join(baseDir, "src", "OpenLabeling", "main", "class_list.txt"))
-      var writeStream = fs.createWriteStream(path.join(baseDir, "src", "OpenLabeling", "main", "class_list.txt"), "utf8");
+      console.log("Writing this file to " + userDataDir)
+      var writeStream = fs.createWriteStream(path.join(userDataDir, "class_list.txt"), "utf8");
+      classListLocation = path.join(userDataDir, "class_list.txt")
       stream.pipe(writeStream);
       stream.on("end", () => {
         resolve(""); // Don't need to return anything, but we have to return the promise 
@@ -50,13 +53,26 @@ function updateClassList() {
 // Very good page: https://developer.box.com/guides/authentication/access-tokens/developer-tokens/
 /* PURPOSE: Goes through all the authentication stuff and gets us a fully authenticated client object that we can use to actually make requests */
 // TODO: Set this to false when actually building for production 
-var usingDevToken = true;
+var usingDevToken = false;
 login(); // Called when page loads
 function login() {
 
   // Reset the app to its "base" state with clean folders and all that business 
   clearDirectory(OL_INPUT_FOLDER)
   clearDirectory(OL_OUTPUT_FOLDER)
+
+  // Set up user data directory with everything we need
+  if (!fs.existsSync(path.join(userDataDir, "input"))) {
+    fs.mkdirSync(path.join(userDataDir, "input"))
+  }
+
+  if (!fs.existsSync(path.join(userDataDir, "output"))) {
+    fs.mkdirSync(path.join(userDataDir, "output"))
+  }
+
+  if (!fs.existsSync(path.join(userDataDir, "ZipFiles"))) {
+    fs.mkdirSync(path.join(userDataDir, "ZipFiles"))
+  }
 
   updateStatus("Authenticating with Box.");
 
@@ -251,7 +267,7 @@ async function launchOpenLabeling(baseDir) {
 
   await updateClassList(baseDir); // Function is async because it relies on a file download, but 
   clearDirectory(path.join(OL_OUTPUT_FOLDER, "../")); // Get rid of everything inside the output directory. Our actual output directory is the YOLO_darknet subset, so we want one up from that
-  clearDirectory(path.join(baseDir, "ZipFiles"));
+  clearDirectory(path.join(userDataDir, "ZipFiles"));
 
   // Figuring out where we launch OpenLabeling from 
   var OLMainFilePath = path.resolve(path.join(baseDir, "src", "OpenLabeling", "main", "main.py"));
@@ -260,9 +276,15 @@ async function launchOpenLabeling(baseDir) {
   const PythonPath = "/usr/bin/python3";
   console.log("Using python interpreter located at " + PythonPath);
 
-  // Actually spawning the process and setting up listeners for all its streams 
-  // -u removes stream buffers so we get all output immediately 
-  var olProcess = spawn(PythonPath, [OLMainFilePath, "-u", baseDir]);
+  // Actually spawning the process and setting up listeners for all its streams
+  // First element of array always has to be file to launch, then any flags onto python itself, then any other arguments
+  var olProcess = spawn(PythonPath, [
+    "-u", // Don't buffer output
+    OLMainFilePath, // Actual file we're executing
+    "-i", path.join(userDataDir, "input"), // Pass in input directory 
+    "-o", path.join(userDataDir, "output"), // Pass in output directory 
+    classListLocation, // Because we can't modify the actual app directory, I modified OpenLabeling to use one we pass in 
+    baseDir ]); // Needed for OpenLabeling to locate site_packages
   olProcess.stdout.on("data", (chunk) => { console.log("stdout: " + chunk); });
   olProcess.stderr.on("data", (chunk) => { console.log("stderr: " + chunk); });
   olProcess.on("close", (code) => {
