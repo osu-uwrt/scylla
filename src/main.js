@@ -1,6 +1,8 @@
 // Imports 
 const { app, BrowserWindow } = require('electron');
+var process = require("process");
 
+// This code snippet is great for testing front-end stuff; It's essentially live server, but for electron. You might have to install electron-reload.
 /* 
 require("electron-reload")(__dirname, {
   electron: require(`${__dirname}/node_modules/electron`)
@@ -20,6 +22,6 @@ app.on('ready', () =>
     }
   })
 
-  win.loadFile('./startup.html');  
+  win.loadFile("./src/startup.html");  
   win.maximize();
 });

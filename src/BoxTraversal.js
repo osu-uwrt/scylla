@@ -19,7 +19,7 @@ module.exports = {
 // Necessary imports 
 var FolderCache = require("./FolderCache");
 var BoxingQueue = require("./BoxingQueue");
-const { updateStatus } = require("./Utility");
+var { baseDir, updateStatus, clearDirectory } = require("./Utility");
 
 // Due to how this is organized, need to offer a way for the main file to get BoxingQueue stuff from this file 
 function getBoxingQueue() {

@@ -1,30 +1,25 @@
 #! /usr/bin/python3
 
-# Manually adding the folder containing all our local module installations to $PYTHONPATH, or else our interpreter doesn't pick them up and OpenLabeling crashes and burns 
 import os 
 import sys
 
+# For debug purposes 
 print("Passed-In Arguments: ") 
 for x in range(len(sys.argv)): 
     print(str(x) + ":" + str(sys.argv[x]))
 
-basePath = sys.argv[2] 
-print("basePath: " + str(basePath))
-
-# Delete last two elements b/c something in OpenLabeling uses these arguments 
-# too and it screws that system up for whatever reason 
-del sys.argv[1] 
-del sys.argv[1]
-
-print("os.path.abspath: " + str(os.path.abspath("./")))
-print("os.getcwd: " + str(os.getcwd()))
-
-sitePackagesAddress = os.path.join(basePath, "extraResources", "site_packages")
-
+# We bundle all our Python modules together with it
+sitePackagesAddress = os.path.join(sys.argv[len(sys.argv) - 1], "src", "site_packages")
 print("Looking for site_packages at this path: " + str(sitePackagesAddress))
 sys.path.append(sitePackagesAddress)
+del sys.argv[len(sys.argv) - 1] 
 
-# If you have a ros installation, it pulls cv2 from that for whatever reason, so we get rid of that 
+# Because we can't modify the user data directory, we pass this in, and I modified OpenLabeling to use ours
+class_numbers_path = sys.argv[len(sys.argv) - 1]
+del sys.argv[len(sys.argv) - 1]  
+
+# If you have a ros installation, it prioritizes getting cv2 from that for whatever reason, so we get rid of that 
+# TODO: We won't be running on Python2.7 for too much longer, adjust this to also account for Python3
 if sys.path.count("/opt/ros/kinetic/lib/python2.7/dist-packages") > 0:
   sys.path.remove("/opt/ros/kinetic/lib/python2.7/dist-packages")
 
@@ -928,10 +923,6 @@ def complement_bgr(color):
     k = lo + hi
     return tuple(k - u for u in color)
 
-# change to the directory of this script
-# This is commented out because python-shell does weird things with the current working directory. The current way we do this 
-# is because it's the only way I could get it to work after several hours of troubleshooting. 
-# os.chdir(os.path.dirname(os.path.abspath(__file__)))
 if __name__ == '__main__':
     # load all images and videos (with multiple extensions) from a directory using OpenCV
     IMAGE_PATH_LIST = []
@@ -996,7 +987,9 @@ if __name__ == '__main__':
                     create_PASCAL_VOC_xml(ann_path, abs_path, folder_name, image_name, img_height, img_width, depth)
 
     # load class list
-    with open('class_list.txt') as f:
+    # MODIFIED SPECIFIC TO OSU-UWRT STUFF
+    # PREVIOUS: with open('class_list.txt') as f:
+    with open(class_numbers_path) as f:
         CLASS_LIST = list(nonblank_lines(f))
     #print(CLASS_LIST)
     last_class_index = len(CLASS_LIST) - 1

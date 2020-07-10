@@ -11,6 +11,3 @@ Oval: 9
 Path: 10
 Structure: 11
 Sunny: 12
-Wolf: 13
-Fairy: 14
-Pinger: 15
