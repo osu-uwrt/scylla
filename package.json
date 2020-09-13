@@ -29,7 +29,7 @@
     "glob": "^7.1.6",
     "natural-orderby": "^2.0.3",
     "ncp": "^2.0.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "python-shell": "^2.0.1",
     "rimraf": "^3.0.2"
   },
