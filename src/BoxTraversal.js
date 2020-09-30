@@ -267,8 +267,20 @@ function displayResultsOfNetworkRequest(folder) {
     boxItemText.classList.toggle("boxItemText");
     boxItemText.textContent = items.entries[i].name; 
 
+    //Declares valid file types that are allowed to be boxed.
+    var validFileTypes = [".mp4",".MP4",".avi"];
+
+    // If the file is not of a valid file type, then make that item's name gray.
+    let itemName = (items.entries[i].name)
+    let itemFileType = itemName.substring(itemName.indexOf("."),itemName.length);
+    console.debug(itemFileType);
+    if (!(validFileTypes.includes(itemFileType))) { boxItemText.style="color:gray;"; } 
+    
+
     let boxItem = document.createElement("li");
     boxItem.classList.toggle("boxItem");
+    
+    // Checks if the item is not and folder and if it's filetype is valid.
     if (items.entries[i].type !== "folder") { boxItem.appendChild(boxItemEnableButton); } // Variable is only in scope if it isn't a folder
     boxItem.appendChild(boxItemText);
 
@@ -282,7 +294,7 @@ function displayResultsOfNetworkRequest(folder) {
       }
     }
 
-    // Otherwise, it's a viable file to bbox 
+    // Otherwise, it's a viable file to bbox validFileTypes.includes(itemFileType))
     else {
 
       // If it's currently already in the queue, we render the button as green 
@@ -291,12 +303,14 @@ function displayResultsOfNetworkRequest(folder) {
       }      
 
       // It's a viable file to bbox, so we give it an onclick 
-      boxItem.onclick = function() {
+      if(validFileTypes.includes(itemFileType)){
+        boxItem.onclick = function() {
 
-        BoxingQueue.processNewItem(items.entries[i].name, items.entries[i].id);
-
-        // Make the button green 
-        boxItem.firstChild.classList.toggle("selectedToBox");
+          BoxingQueue.processNewItem(items.entries[i].name, items.entries[i].id);
+  
+          // Make the button green 
+          boxItem.firstChild.classList.toggle("selectedToBox");
+        }
       }
     }
 
