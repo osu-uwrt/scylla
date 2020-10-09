@@ -6,7 +6,7 @@
     <title>Scylla</title>
 
     <link rel="stylesheet" href="frontend/universal.css" />
-    <link rel="stylesheet" href="frontend/box.css" />
+    <link rel="stylesheet" href="frontend/localLabeling.css" />
 
     <!-- Electron needs this, for whatever reason. 
       See: https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
@@ -25,7 +25,7 @@
       <ul>
         <li><a href="startup.html">Home</a></li>
         <li><a href="box.html">Box Stuff</a></li>
-        <li><a href="localLabeling.html">Local Labeling</a>
+        <li><a href="localLabeling.html">Local Labeling</a></li>
       </ul>
 
       <!-- TODO: Make these instructions better. -->
@@ -54,44 +54,15 @@
 
     <div id="rightContainer">
       <div class="rightContainerTopContainer">
-        <button id="refreshButton">
-          <img src="../static/refresh-white-18dp.svg" alt="" />
-        </button>
-        <ul id="currentFilePath">
-          <li class="filePathEntry">
-            <div class="filePathText">Folder 1</div>
-            <div>></div>
-          </li>
-          <li class="filePathEntry">
-            <div class="filePathText">Folder 2</div>
-            <div>></div>
-          </li>
-          <li class="filePathEntry">
-            <div class="filePathText">Folder 3</div>
-            <div>></div>
-          </li>
-          <li class="filePathEntry">
-            <div class="filePathText">Folder 4</div>
-            <div>></div>
-          </li>
-        </ul>
-      </div>      
-      <ul id="baseOfMyTree">
-        <li class="boxItem">
-          <div class="boxItemEnableButton"></div>
-          <div class="boxItemText">File Name</div>
-        </li>
-      </ul>
-      <button id="boxSelectedButton">Box Selected</button>
-      <div id="boxingQueueContainer">
-        <h3>Items Queued to BBox</h3>
-        <ul id="boxingQueue">
-        </ul>
-      </div>      
+        <button type="button" id="selectFilesButton">Select Files to Label</button>
+        <button type="button" id="outputPathButton" style="display: none">Select Output File</button>
+        <button type="button" id="startButton" style="display: none">Start Labeling</button>
+        <button type="button" id="clearButton">Clear files and output directory</button>
+        <a>You MUST enter two or more files otherwise it will not work. Please make sure the file names do not include a "/" or "."</a>
+      </div>
     </div>
-
     <!-- Needs to exec after any DOM elements that it modifies -->
-    <script src="box.js"></script>
+    <script src="localLabeling.js"></script>
 
   </body>
 </html>
