@@ -20,6 +20,7 @@ module.exports = {
 var FolderCache = require("./FolderCache");
 var BoxingQueue = require("./BoxingQueue");
 var { baseDir, updateStatus, clearDirectory } = require("./Utility");
+const { idIsInQueue } = require("./BoxingQueue");
 
 // Due to how this is organized, need to offer a way for the main file to get BoxingQueue stuff from this file 
 function getBoxingQueue() {
@@ -242,9 +243,36 @@ async function displayFolder(id) {
   displayResultsOfNetworkRequest(folder); 
 }
 
+//Declares valid file types that are allowed to be boxed.
+
+var validFileTypes = ["mp4","MP4","avi","MOV"];
+
+var outputItems = [];
+
+async function checkContentsOfOutputFolder(){
+  let folder = await getFolder(105343099285);
+  
+  console.debug("The output folder has been checked: ", folder)
+
+  let items = folder.items
+  for (let i = 0; i < items.entries.length; i++) {
+
+    
+    if (items.entries[i].type !== "folder") {
+      var fileName = folder.items.entries[i].name;
+      for(let i = 0; i < validFileTypes.length; i ++){
+        if (fileName.includes(validFileTypes[i])){
+          fileName = fileName.substring(0,fileName.indexOf(validFileTypes[i])-1);
+          outputItems.push(fileName);
+        } 
+      }
+    }
+  }
+  console.debug(outputItems);
+}
 // Gritty HTML DOM stuff to display the items object 
 function displayResultsOfNetworkRequest(folder) {
-
+  checkContentsOfOutputFolder();
   console.log("Setting currentFolder to ", folder);
   updateStatus("Waiting for user selection.");
   currentFolder = folder;
@@ -267,20 +295,22 @@ function displayResultsOfNetworkRequest(folder) {
     boxItemText.classList.toggle("boxItemText");
     boxItemText.textContent = items.entries[i].name; 
 
-    //Declares valid file types that are allowed to be boxed.
-    var validFileTypes = [".mp4",".MP4",".avi"];
+    
 
-    // If the file is not of a valid file type, then make that item's name gray.
+    // If the file is not of a valid file type or if its already been labeled, then make that item's name gray.
     let itemName = (items.entries[i].name)
-    let itemFileType = itemName.substring(itemName.indexOf("."),itemName.length);
-    console.debug(itemFileType);
-    if (!(validFileTypes.includes(itemFileType))) { boxItemText.style="color:gray;"; } 
+    let itemFileType = itemName.substring(itemName.lastIndexOf(".")+1,itemName.length);
+
+    let validFile = !(validFileTypes.includes(itemFileType));
+    let labeledFile = outputItems.includes(itemName.substring(0,itemName.indexOf(itemFileType)-1))
+
+    if (validFile || labeledFile) { boxItemText.style="color:gray;"; } 
     
 
     let boxItem = document.createElement("li");
     boxItem.classList.toggle("boxItem");
     
-    // Checks if the item is not and folder and if it's filetype is valid.
+    // Checks if the item is not a folder and if it's filetype is valid.
     if (items.entries[i].type !== "folder") { boxItem.appendChild(boxItemEnableButton); } // Variable is only in scope if it isn't a folder
     boxItem.appendChild(boxItemText);
 
@@ -302,14 +332,26 @@ function displayResultsOfNetworkRequest(folder) {
         boxItem.firstChild.classList.toggle("selectedToBox");
       }      
 
-      // It's a viable file to bbox, so we give it an onclick 
+      // Check if the file is of a valid file type.
       if(validFileTypes.includes(itemFileType)){
+        // It's a viable file to bbox, so we give it an onclick 
         boxItem.onclick = function() {
 
-          BoxingQueue.processNewItem(items.entries[i].name, items.entries[i].id);
+          if(labeledFile && !(idIsInQueue(items.entries[i].id))){
+            let confirmFile = confirm("This file has already been labeled. Add to queue anyway?");
+            if(confirmFile == true){
+              BoxingQueue.processNewItem(items.entries[i].name, items.entries[i].id);
+              // Make the button green 
+              boxItem.firstChild.classList.toggle("selectedToBox");
+            }
+          } else {
+            BoxingQueue.processNewItem(items.entries[i].name, items.entries[i].id);
+            // Make the button green 
+            boxItem.firstChild.classList.toggle("selectedToBox");
+          }
+          
   
-          // Make the button green 
-          boxItem.firstChild.classList.toggle("selectedToBox");
+          
         }
       }
     }
