@@ -9,6 +9,7 @@ var spawn = require("child_process").spawn;
 
 //Other custom JS files that we want code from
 var { baseDir, updateStatus, clearDirectory } = require("./Utility");
+var execSync = require('child_process').execSync;
 
 //Webpage Elements
 const selectFilesBtn = document.getElementById("selectFilesButton");
@@ -21,8 +22,12 @@ var files = [];
 const userDataDir = (electron.app || electron.remote.app).getPath("userData");
 const OL_INPUT_FOLDER = path.join(userDataDir, "input");
 var OL_OUTPUT_FOLDER = "";
-const classListLocation = path.join(userDataDir, "class_list.txt")
+var OS = process.platform;
+const classListLocation = path.join(userDataDir, "class_list.txt");
+
 console.log("OL_INPUT_FOLDER: " + OL_INPUT_FOLDER); 
+//console.log(PythonPath);
+
 
 //Button press events
 selectFilesBtn.addEventListener("click", function() {
@@ -34,13 +39,14 @@ selectFilesBtn.addEventListener("click", function() {
         {name: "Videos", extensions: ['avi', 'mp4', "MOV", "MP4"]}
       ]
     }).then(result => {
-    console.log(result.filePaths);
+    // Adds each file's path to array files
     for (i = 0; i < result.filePaths.length; i++) {
       if (!files.includes(result.filePaths[i])) {
         files.push(result.filePaths[i]);
         console.log(files);
       }
     }
+    // Hides directory selector button if no files are selected
     if (files.length == 0) {
       outputPathBtn.style.display = "none";
     } else {
@@ -50,7 +56,7 @@ selectFilesBtn.addEventListener("click", function() {
 });
 
 clearBtn.addEventListener("click", function() {
-  //Clear files and output directory
+  // Clear files and output directory
   files = [];
   OL_OUTPUT_FOLDER = "";
   startBtn.style.display = "none";
@@ -58,7 +64,7 @@ clearBtn.addEventListener("click", function() {
 });
 
 outputPathBtn.addEventListener("click", function() {
-  //This opens file explorers and allows user to select output directory
+  // This opens file explorers and allows user to select output directory
   dialog.showOpenDialog({properties: ['openDirectory']}).then(result => {
     console.log(result.filePaths);
     if ((OL_OUTPUT_FOLDER == "") && (!result.canceled)) {
@@ -69,6 +75,7 @@ outputPathBtn.addEventListener("click", function() {
       OL_OUTPUT_FOLDER = path.join(result.filePaths.join(), "output");
       console.log(OL_OUTPUT_FOLDER);
     }
+    // Hides start button if no output directory is selected
     if (files != null) {
       startBtn.style.display = null;
     } else {
@@ -102,6 +109,7 @@ startBtn.addEventListener("click", function() {
   console.log("OL_OUTPUT_FOLDER: " + OL_OUTPUT_FOLDER);
   
   updateStatus("Moving all the files...");
+
   //Add selected files to input folder
   for (let i = 0; i < files.length; i++) {
     var indexSlash = files[i].lastIndexOf("/");
@@ -119,14 +127,22 @@ async function launchOpenLabeling(baseDir) {
 
   updateStatus("Launching OpenLabeling.");
 
-  //clearDirectory(path.join(OL_OUTPUT_FOLDER, "../")); // Get rid of everything inside the output directory. Our actual output directory is the YOLO_darknet subset, so we want one up from that
   clearDirectory(path.join(userDataDir, "ZipFiles"));
 
   // Figuring out where we launch OpenLabeling from
   var OLMainFilePath = path.resolve(path.join(baseDir, "src", "OpenLabeling", "main", "main.py"));
   console.log("Launching OpenLabeling from path " + OLMainFilePath);
-
-  const PythonPath = "/usr/bin/python";
+  // Set python interpreter path
+  if (OS === "linux") {
+    var PythonPath = execSync("which python", {encoding: "utf-8"});
+    PythonPath = JSON.stringify(PythonPath);
+    PythonPath = PythonPath.replace("\\n", "");
+    PythonPath = PythonPath.substring(1, PythonPath.length - 1);
+  } /* Needs testing on Windows
+    else if (OS === "win32") {
+    var PythonPath = execSync("python -c 'import os, sys; print(os.path.dirname(sys.executable))'", {encoding: "utf-8"});
+  }
+  */
   console.log("Using python interpreter located at " + PythonPath);
 
   // Actually spawning the process and setting up listeners for all its streams
