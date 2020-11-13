@@ -18,6 +18,31 @@ function idIsInQueue(id) {
     return false;
 }
 
+// check if a file is clicked and in queue 
+
+if (idIsInQueue(id) === true){
+
+    console.log("Another user is working on this file")
+
+    // add lock file 
+
+    var options = {
+        is_download_prevented: true
+    }
+
+    clientInformation.files.lock(fileID, options);
+
+} else {
+
+    console.log("No one is working. You may open this file")
+
+
+
+}
+
+
+
+
 function removeFromQueue(id) {
     for (let i = 0; i < itemsToBox.length; i++) {
         if (itemsToBox[i].fileID === id) {
