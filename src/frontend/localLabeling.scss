@@ -1,0 +1,93 @@
+#selectFilesButton {
+  position: absolute;
+  left: 15px;
+  bottom: 15px;
+  width: calc(100% - 30px);
+  height: 50px;
+  background-color: #9B0000;
+  color: white;
+  font-size: 18px;
+  border: none;
+  border-top: 1px black solid;
+  cursor: pointer;
+}
+
+#selectFilesButton:hover {
+  background-color: #AC0000;
+}
+
+#startButton {
+  position: absolute;
+  left: 15px;
+  bottom: 135px;
+  width: calc(100% - 30px);
+  height: 50px;
+  background-color: #9B0000;
+  color: white;
+  font-size: 18px;
+  border: none;
+  border-top: 1px black solid;
+  cursor: pointer;
+}
+
+#startButton:hover{
+  background-color: #AC0000;
+}
+
+#outputPathButton {
+  position: absolute;
+  left: 15px;
+  bottom: 75px;
+  width: calc(100% - 30px);
+  height: 50px;
+  background-color: #9B0000;
+  color: white;
+  font-size: 18px;
+  border: none;
+  border-top: 1px black solid;
+  cursor: pointer;
+}
+
+#outputPathButton:hover{
+  background-color: #AC0000;
+}
+
+#clearButton {
+  position: absolute;
+  left: 15px;
+  top: 50px;
+  width: calc(100% - 30px);
+  height: 50px;
+  background-color: #9B0000;
+  color: white;
+  font-size: 18px;
+  border: none;
+  border-top: 1px black solid;
+  cursor: pointer;
+}
+
+#clearButton:hover{
+  background-color: #AC0000;
+}
+
+.rightContainerTopContainer {
+  height: 50px;
+  width: calc(100% - 300px);
+}
+
+.rightContainerTopContainer button, .rightContainerTopContainer ul {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.rightContainerTopContainer button {
+  background-color: #222222;
+  border: 1px white solid;
+  margin-left: 10px;
+}
+
+.rightContainerTopContainer button:focus {
+  outline: none;
+  -webkit-box-shadow: none;
+          box-shadow: none;
+}
